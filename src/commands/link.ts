@@ -9,6 +9,7 @@ export const data = new SlashCommandBuilder()
   .setDescription("Links your slotted key to your account");
 
 export async function execute(interaction: CommandInteraction) {
+    // TODO: add check on backend to see if key is valid before linking
     try {
         const key = interaction.options.get("key")?.value as string;
         const user = await prisma.user.findFirst({where: {discordID: interaction.user.id}});    

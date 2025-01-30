@@ -8,7 +8,15 @@ async function main() {
       keys: true,
     },
   })
-  console.dir(usersWithPosts, { depth: null })
+  const keys = await prisma.key.findMany({});
+
+  keys.forEach(key => {;
+    const timeString = key.createdAt.getTime().toString().slice(0, 10);
+
+    console.log(`<t:${timeString}:R>`);
+  });
+
+  // console.dir(usersWithPosts, { depth: null })
 }
 
 main()
@@ -21,3 +29,4 @@ main()
     process.exit(1)
   })
 
+  1738258730|315

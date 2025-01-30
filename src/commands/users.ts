@@ -1,3 +1,8 @@
+// --------------------------------------------------------------------------
+//                              DEBUG ONLY
+// --------------------------------------------------------------------------
+
+
 import { CommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { PrismaClient } from '@prisma/client';
 
@@ -17,6 +22,7 @@ export async function execute(interaction: CommandInteraction) {
             message += JSON.stringify(user, null, 2) + "\n";
         });
         message += "```";
+        await prisma.$disconnect();
         return interaction.reply({content: message, flags: MessageFlags.Ephemeral});
     }
     catch (e) {
