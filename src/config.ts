@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 
-dotenv.config({path: "src/.env", debug:true});
+dotenv.config({path: ".env", debug:true});
 
 const { DISCORD_TOKEN, DISCORD_CLIENT_ID } = process.env;
 
