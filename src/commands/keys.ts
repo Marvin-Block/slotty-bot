@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 export const data = new SlashCommandBuilder()
   .setName("keys")
+  .setDefaultMemberPermissions(0)
   .setDescription("Shows you all the keys linked to your account");
 
 export async function execute(interaction: CommandInteraction) {

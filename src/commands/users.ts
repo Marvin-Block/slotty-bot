@@ -10,10 +10,10 @@ const prisma = new PrismaClient();
 
 export const data = new SlashCommandBuilder()
   .setName("users")
+  .setDefaultMemberPermissions(0)
   .setDescription("print users");
 
 export async function execute(interaction: CommandInteraction) {
-    if(interaction.user.id !== "") return interaction.reply({content: "You do not have permission to use this command", flags: MessageFlags.Ephemeral});
     try {
         const usersWithKeys = await prisma.user.findMany({include: {keys: true}});
         console.dir(usersWithKeys, {depth: null});
