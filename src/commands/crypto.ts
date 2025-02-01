@@ -40,7 +40,7 @@ export async function execute(interaction: CommandInteraction) {
     message += `To purchase with Bitcoin send:\n`;
     message += `├ BTC: \`${btcAmount.toFixed(6)}\`\n`;
     message += `└ To:  \`${config.BTC_WALLET}\`\n\n`;
-    message += `To purchase with Litecion send:\n`;
+    message += `To purchase with Litecoin send:\n`;
     message += `├ LTC: \`${ltcAmount.toFixed(6)}\`\n`;
     message += `└ To:  \`${config.LTC_WALLET}\`\n`;
 
