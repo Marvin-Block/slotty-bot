@@ -1,7 +1,6 @@
 {
 	"scripts": {
 		"dev": "tsx watch src/index.ts",
-		"test": "tsx watch src/test.ts",
 		"start": "node dist/index.js",
 		"build": "tsup src/index.ts --minify"
 	},
