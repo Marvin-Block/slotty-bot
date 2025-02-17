@@ -34,9 +34,32 @@ client.on('messageCreate', async (message) => {
     message.content.startsWith('<:salute:1335591427031306342>') &&
     !message.author.bot
   ) {
-    message.channel.send(
-      '<:salute:1335591427031306342> <:slotty:1336010394829066240>'
-    );
+    let rng = Math.floor(Math.random() * 100);
+
+    // special case for sx
+    if (message.author.id == '846185075372720158') {
+      // 65% chance of sending a static emoji, 35% chance of sending a gif
+      if (rng < 65) {
+        return message.channel.send(
+          '<:salute:1335591427031306342> <:slotty:1336010394829066240>'
+        );
+      } else {
+        return message.channel.send(
+          '<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900>'
+        );
+      }
+    }
+
+    // 85% chance of sending a static emoji, 15% chance of sending a gif
+    if (rng < 85) {
+      return message.channel.send(
+        '<:salute:1335591427031306342> <:slotty:1336010394829066240>'
+      );
+    } else {
+      return message.channel.send(
+        '<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900>'
+      );
+    }
   }
 });
 
