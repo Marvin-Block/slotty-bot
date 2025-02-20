@@ -37,7 +37,7 @@ export async function execute(interaction: CommandInteraction) {
   const channelid = new TextInputBuilder()
     .setCustomId('channelid')
     .setLabel('Channel ID')
-    .setRequired(true)
+    .setRequired(false)
     .setStyle(TextInputStyle.Short);
 
   const messageid = new TextInputBuilder()

@@ -43,27 +43,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
         'Message is too long, please keep it under 2000 characters'
       );
     }
-    await interaction.reply({
-      content: 'Your submission was received successfully!',
-      flags: MessageFlags.Ephemeral,
-    });
+
     try {
       if (!messageid) {
         const channel = client.channels.cache.get(channelid) as TextChannel;
-        if (!channel)
-          return interaction.reply({
-            content: 'Channel not found',
-            flags: MessageFlags.Ephemeral,
-          });
+        if (!channel) return interaction.reply(messageInput);
 
         return channel.send(messageInput);
       } else {
         const channel = client.channels.cache.get(channelid) as TextChannel;
-        if (!channel)
-          return interaction.reply({
-            content: 'Channel not found',
-            flags: MessageFlags.Ephemeral,
-          });
+        if (!channel) return interaction.reply(messageInput);
 
         const message = await channel.messages.fetch(messageid);
         if (!message)
