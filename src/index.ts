@@ -51,9 +51,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return channel.send(messageInput);
       } else {
         const channel = client.channels.cache.get(channelid) as TextChannel;
-        if (!channel) {
-          return (interaction.channel as TextChannel).send(messageInput);
-        }
+        if (!channel) return interaction.reply(messageInput);
 
         const message = await channel.messages.fetch(messageid);
         if (!message)
