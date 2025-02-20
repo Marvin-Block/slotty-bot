@@ -50,8 +50,12 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    // 85% chance of sending a static emoji, 15% chance of sending a gif
-    if (rng < 85) {
+    // 85% chance of sending a static emoji, 15% chance of sending a gif, 1% chance of sending a special message
+    if (rng == 69) {
+      return message.channel.send(
+        '<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900>'
+      );
+    } else if (rng < 85) {
       return message.channel.send(
         '<:salute:1335591427031306342> <:slotty:1336010394829066240>'
       );
