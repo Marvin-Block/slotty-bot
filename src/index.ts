@@ -37,7 +37,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const channelid = interaction.fields.getTextInputValue('channelid');
     const messageid = interaction.fields.getTextInputValue('messageid');
     const messageInput = interaction.fields.getTextInputValue('messageInput');
-    console.log({ channelid, messageid, messageInput });
     if (messageInput.length > 2000) {
       return interaction.reply(
         'Message is too long, please keep it under 2000 characters'
@@ -52,7 +51,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return channel.send(messageInput);
       } else {
         const channel = client.channels.cache.get(channelid) as TextChannel;
-        if (!channel) return interaction.reply(messageInput);
+        if (!channel) {
+          return (interaction.channel as TextChannel).send(messageInput);
+        }
 
         const message = await channel.messages.fetch(messageid);
         if (!message)
