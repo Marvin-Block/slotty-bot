@@ -2,9 +2,9 @@ import dotenv from "dotenv";
 
 dotenv.config({path: ".env", debug:true});
 
-const { DISCORD_TOKEN, DISCORD_CLIENT_ID, BASE_PRICE, BTC_WALLET, LTC_WALLET, WEEK_PRICE, THREE_MONTH_PRICE } = process.env;
+const { DISCORD_TOKEN, DISCORD_CLIENT_ID, BASE_PRICE, BTC_WALLET, LTC_WALLET, WEEK_PRICE, THREE_MONTH_PRICE, SALT } = process.env;
 
-if (!DISCORD_TOKEN || !DISCORD_CLIENT_ID || !BASE_PRICE || !BTC_WALLET || !LTC_WALLET || !WEEK_PRICE || !THREE_MONTH_PRICE) {
+if (!DISCORD_TOKEN || !DISCORD_CLIENT_ID || !BASE_PRICE || !BTC_WALLET || !LTC_WALLET || !WEEK_PRICE || !THREE_MONTH_PRICE || !SALT) {
   throw new Error("Missing environment variables");
 }
 
@@ -16,5 +16,6 @@ export const config = {
   THREE_MONTH_PRICE,
   BTC_WALLET,
   LTC_WALLET,
+  SALT,
 };
 

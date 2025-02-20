@@ -6,6 +6,8 @@
 	},
 	"dependencies": {
 		"@prisma/client": "6.3.0",
+		"axios": "^1.7.9",
+		"big-integer": "^1.6.52",
 		"discord.js": "^14.17.3",
 		"dotenv": "^16.4.7"
 	},

@@ -1,7 +1,10 @@
-import { Client, Events, MessageFlags, TextChannel } from 'discord.js';
+import { Attachment, AttachmentBuilder, Client, Events, MessageFlags, TextChannel } from 'discord.js';
 import { commands } from './commands';
 import { config } from './config';
 import { deployCommands } from './deploy-commands';
+import { SecureRandomGenerator } from './secure_random_number';
+
+const secRand = new SecureRandomGenerator();
 
 const client = new Client({
   intents: ['Guilds', 'GuildMessages', 'DirectMessages', 'MessageContent'],
@@ -9,6 +12,8 @@ const client = new Client({
 
 client.once(Events.ClientReady, () => {
   console.log('Discord bot is ready! 🤖');
+  
+  secRand.generateCommitment();
 });
 
 client.on(Events.GuildCreate, async (guild) => {
@@ -73,39 +78,56 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.MessageCreate, async (message) => {
+
   if (
     message.content.startsWith('<:salute:1335591427031306342>') &&
     !message.author.bot
   ) {
-    let rng = Math.floor(Math.random() * 100);
+    const sentMessage = await message.channel.send("<a:load_salute:1342202643484774400>");
+    const channelMessages = await message.channel.fetch();
+    const msg = channelMessages.messages.cache.get(sentMessage.id)!;
 
-    // special case for sx
-    if (message.author.id == '846185075372720158') {
-      // 65% chance of sending a static emoji, 35% chance of sending a gif
-      if (rng < 65) {
-        return message.channel.send(
-          '<:salute:1335591427031306342> <:slotty:1336010394829066240>'
-        );
-      } else {
-        return message.channel.send(
-          '<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900>'
-        );
-      }
+    let rng = await secRand.generateSecureRandom(0, 1000);
+
+    //0.1 %
+    if(rng.number == 69) {
+      const attachment = new AttachmentBuilder('./assets/supreme_salute.gif');
+      setTimeout(() => {
+        msg.edit({ content: '', files: [attachment] });
+      }, 1000);
     }
-
-    // 85% chance of sending a static emoji, 15% chance of sending a gif, 1% chance of sending a special message
-    if (rng == 69) {
-      return message.channel.send(
-        '<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900>'
-      );
-    } else if (rng < 85) {
-      return message.channel.send(
-        '<:salute:1335591427031306342> <:slotty:1336010394829066240>'
-      );
-    } else {
-      return message.channel.send(
-        '<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900>'
-      );
+    // 1 %
+    else if (rng.number >= 420 && rng.number < 430) {
+      setTimeout(() => {
+        msg.edit('<:salute:1335591427031306342>');
+        setTimeout(() => {
+          msg.edit('<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900>');
+          setTimeout(() => {
+            msg.edit('<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900>');
+            setTimeout(() => {
+              msg.edit('<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900>');
+            }, 1000);
+          }, 1000);
+        }, 1000);
+      }, 1000);
+    }
+    // 83.9 %
+    else if (rng.number < 840) {
+      setTimeout(() => {
+        msg.edit('<:salute:1335591427031306342>');
+        setTimeout(() => {
+          msg.edit('<:salute:1335591427031306342> <:slotty:1336010394829066240>');
+        }, 1000);
+      }, 1000);
+    } 
+    // 15 %
+    else {
+      setTimeout(() => {
+        msg.edit('<:salute:1335591427031306342>');
+        setTimeout(() => {
+          msg.edit('<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900>');
+        }, 1000);
+      }, 1000);
     }
   }
 });

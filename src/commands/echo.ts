@@ -14,19 +14,6 @@ export const data = new SlashCommandBuilder()
   .setContexts(InteractionContextType.Guild)
   .setDescription('Replies with your input!')
   .setDefaultMemberPermissions(0);
-//   .addChannelOption((option) =>
-//     option
-//       .setName('channel')
-//       .setDescription('The channel to echo into')
-//       .setRequired(true)
-//       .addChannelTypes(ChannelType.GuildText)
-//   )
-//   .addStringOption((option) =>
-//     option
-//       .setName('input')
-//       .setDescription('The input to echo back')
-//       .setRequired(true)
-//   )
 
 export async function execute(interaction: CommandInteraction) {
   // Create the modal
