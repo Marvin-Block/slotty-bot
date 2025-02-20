@@ -6,16 +6,31 @@ const options = {method: 'GET', headers: {accept: 'text/plain'}};
 export const data = new SlashCommandBuilder()
   .setName("crypto")
   .setDefaultMemberPermissions(0)
+  .addStringOption(option => 
+    option.setName("time")
+    .setDescription("Subscription time")
+    .setRequired(true)
+    .addChoices(
+      { name: "1 Week", value: config.WEEK_PRICE },
+      { name: "1 Month", value: config.BASE_PRICE },
+      { name: "3 Months", value: config.THREE_MONTH_PRICE }
+    )
+  )
   .setDescription("Replies with crypto wallted & prices");
 
 
 export async function execute(interaction: CommandInteraction) {
+    const value = interaction.options.get("time")?.value;
+
+    if(value == undefined) {
+        return interaction.reply({content: "Error fetching price", flags: MessageFlags.Ephemeral});
+    }
 
     var btcPrice = -1;
     var ltcPrice = -1;
     var btcAmount = -1;
     var ltcAmount = -1;
-    const basePrice = parseInt(config.BASE_PRICE);
+    const basePrice = parseInt(value as string);
 
     // fetch BTC price
     await fetch('https://api.coingate.com/api/v2/rates/merchant/GBP/BTC', options)
