@@ -1,0 +1,51 @@
+# FEATURES
+- Orbwalker
+- Evade
+- Awareness
+- Activator
+- Prediction
+- Skin changer
+- Auto-chat
+- Target selector
+- **Developer SDK**
+- Champions:
+**Ahri** [Author:<@693972199727562793>]
+**Amumu** [Author:<@693972199727562793>]
+**Blitzcrank** [Author:<@846185075372720158>]
+**Brand** [Author:<@432586339263971329>]
+**Cassiopeia** [Author:<@846185075372720158>]
+**Corki** [Author:<@846185075372720158>]
+**Diana** [Author:<@693972199727562793>]
+**Ezreal** [Author:<@846185075372720158>]
+**Irelia** [Author:<@432586339263971329>]
+**Jayce** [Author:<@693972199727562793>]
+**Jinx** [Author:<@693972199727562793>,<@846185075372720158>]
+**Kassadin** [Author:<@693972199727562793>]
+**Kogmaw** [Author:<@846185075372720158>]
+**Lucian** [Author:<@693972199727562793>]
+**Lulu** [Author:<@846185075372720158>]
+**Lux** [Author:<@432586339263971329>]
+**Miss Fortune** [Author:<@693972199727562793>,<@846185075372720158>]
+**Mordekaiser** [Author:<@432586339263971329>]
+**Morgana** [Author:<@432586339263971329>]
+**Nami** [Author:<@693972199727562793>]
+**Nilah** [Author:<@693972199727562793>]
+**Olaf** [Author:<@693972199727562793>]
+**Orianna** [Author:<@322659763643088897>]
+**Riven** [Author:<@244274236338864128>]
+**Samira** [Author:<@693972199727562793>]
+**Senna** [Author:<@846185075372720158>]
+**Swain** [Author:<@693972199727562793>]
+**Syndra** [Author:<@693972199727562793>]
+**Thresh** [Author:<@432586339263971329>]
+**Twitch** [Author:<@693972199727562793>]
+**Veigar** [Author:<@432586339263971329>]
+**Vel'Koz** [Author:<@846185075372720158>]
+**Viktor** [Author:<@846185075372720158>]
+**Xayah** [Author:<@322659763643088897>]
+**Xerath** [Author:<@846185075372720158>]
+**Yasuo** [Author:<@432586339263971329>]
+**Yone** [Author:<@693972199727562793>]
+**Zed** [Author:<@322659763643088897>,<@244274236338864128>]
+**Zeri** [Author:<@846185075372720158>]
+**Zoe** [Author:<@846185075372720158>]
