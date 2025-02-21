@@ -14,6 +14,7 @@ model User {
   id Int @id @default(autoincrement())
   discordID String @unique
   keys Key[]
+  salutes Salute[]
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }
@@ -23,6 +24,37 @@ model Key {
   key String @unique
   user User @relation(fields: [userID], references: [id])
   userID Int
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Salute {
+  id Int @id @default(autoincrement())
+  user User @relation(fields: [userID], references: [id])
+  audit Audit @relation(fields: [auditId], references: [id])
+  auditId Int @unique
+  userID Int 
+  rarity Int
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Audit {
+  id Int @id @default(autoincrement())
+  result Int
+  salute Salute?
+  drandRoundsCurrent Int
+  drandRoundsPrevious Int
+  commitment String
+  vdfHash String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Settings {
+  id Int @id @default(autoincrement())
+  name String @unique
+  value String
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }

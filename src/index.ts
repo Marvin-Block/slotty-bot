@@ -1,18 +1,18 @@
-import { Attachment, AttachmentBuilder, Client, Events, MessageFlags, TextChannel } from 'discord.js';
-import { commands } from './commands';
-import { config } from './config';
-import { deployCommands } from './deploy-commands';
-import { SecureRandomGenerator } from './secure_random_number';
+import { Client, Events, MessageFlags, TextChannel } from "discord.js";
+import { commands } from "./commands";
+import * as saluteGambling from "./text-commands/salutegambling";
+import { config } from "./config";
+import { deployCommands } from "./deploy-commands";
+import { SecureRandomGenerator } from "./secure_random_number";
 
 const secRand = new SecureRandomGenerator();
 
 const client = new Client({
-  intents: ['Guilds', 'GuildMessages', 'DirectMessages', 'MessageContent'],
+  intents: ["Guilds", "GuildMessages", "DirectMessages", "MessageContent"],
 });
 
-client.once(Events.ClientReady, () => {
-  console.log('Discord bot is ready! 🤖');
-  
+client.once(Events.ClientReady, async () => {
+  console.log("Discord bot is ready! 🤖");
   secRand.generateCommitment();
 });
 
@@ -38,13 +38,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isModalSubmit()) return;
 
-  if (interaction.customId === 'echoModal') {
-    const channelid = interaction.fields.getTextInputValue('channelid');
-    const messageid = interaction.fields.getTextInputValue('messageid');
-    const messageInput = interaction.fields.getTextInputValue('messageInput');
+  if (interaction.customId === "echoModal") {
+    const channelid = interaction.fields.getTextInputValue("channelid");
+    const messageid = interaction.fields.getTextInputValue("messageid");
+    const messageInput = interaction.fields.getTextInputValue("messageInput");
     if (messageInput.length > 2000) {
       return interaction.reply(
-        'Message is too long, please keep it under 2000 characters'
+        "Message is too long, please keep it under 2000 characters"
       );
     }
 
@@ -61,7 +61,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         const message = await channel.messages.fetch(messageid);
         if (!message)
           return interaction.reply({
-            content: 'Message not found',
+            content: "Message not found",
             flags: MessageFlags.Ephemeral,
           });
 
@@ -69,7 +69,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
     } catch (e) {
       interaction.reply({
-        content: 'An error occurred',
+        content: "An error occurred",
         flags: MessageFlags.Ephemeral,
       });
       console.log(e);
@@ -78,58 +78,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.MessageCreate, async (message) => {
-
-  if (
-    message.content.startsWith('<:salute:1335591427031306342>') &&
-    !message.author.bot
-  ) {
-    const sentMessage = await message.channel.send("<a:load_salute:1342202643484774400>");
-    const channelMessages = await message.channel.fetch();
-    const msg = channelMessages.messages.cache.get(sentMessage.id)!;
-
-    let rng = await secRand.generateSecureRandom(0, 1000);
-
-    //0.1 %
-    if(rng.number == 69) {
-      const attachment = new AttachmentBuilder('./assets/supreme_salute.gif');
-      setTimeout(() => {
-        msg.edit({ content: '', files: [attachment] });
-      }, 1000);
-    }
-    // 1 %
-    else if (rng.number >= 420 && rng.number < 430) {
-      setTimeout(() => {
-        msg.edit('<:salute:1335591427031306342>');
-        setTimeout(() => {
-          msg.edit('<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900>');
-          setTimeout(() => {
-            msg.edit('<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900>');
-            setTimeout(() => {
-              msg.edit('<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900> <a:slotty_gif:1336009659399802900>');
-            }, 1000);
-          }, 1000);
-        }, 1000);
-      }, 1000);
-    }
-    // 83.9 %
-    else if (rng.number < 840) {
-      setTimeout(() => {
-        msg.edit('<:salute:1335591427031306342>');
-        setTimeout(() => {
-          msg.edit('<:salute:1335591427031306342> <:slotty:1336010394829066240>');
-        }, 1000);
-      }, 1000);
-    } 
-    // 15 %
-    else {
-      setTimeout(() => {
-        msg.edit('<:salute:1335591427031306342>');
-        setTimeout(() => {
-          msg.edit('<:salute:1335591427031306342> <a:slotty_gif:1336009659399802900>');
-        }, 1000);
-      }, 1000);
-    }
-  }
+  saluteGambling.run(message);
 });
 
 client.login(config.DISCORD_TOKEN);

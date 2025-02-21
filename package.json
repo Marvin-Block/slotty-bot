@@ -1,20 +1,28 @@
 {
-	"scripts": {
-		"dev": "tsx watch src/index.ts",
-		"start": "node dist/index.js",
-		"build": "tsup src/index.ts --minify"
-	},
-	"dependencies": {
-		"@prisma/client": "6.3.0",
-		"axios": "^1.7.9",
-		"big-integer": "^1.6.52",
-		"discord.js": "^14.17.3",
-		"dotenv": "^16.4.7"
-	},
-	"devDependencies": {
-		"prisma": "^6.3.0",
-		"tsup": "^8.3.6",
-		"tsx": "^4.19.2",
-		"typescript": "^5.7.3"
-	}
+  "prisma": {
+    "seed": "ts-node ./prisma/seed.ts"
+  },
+  "scripts": {
+    "dev:live": "tsx --env-file=.env src/index.ts",
+    "dev": "tsx --env-file=.env.dev src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup src/index.ts --minify",
+    "seed": "prisma db seed",
+    "migrate": "prisma migrate dev --name init"
+  },
+  "dependencies": {
+    "@prisma/client": "6.3.0",
+    "axios": "^1.7.9",
+    "big-integer": "^1.6.52",
+    "discord.js": "^14.17.3",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "prisma": "^6.3.0",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.3.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
 }
