@@ -43,7 +43,10 @@ export async function run(
     }
   }
 
-  const sentMessage = await message.reply(loadSalute);
+  const sentMessage = await message.reply({
+    content: loadSalute,
+    allowedMentions: { repliedUser: false },
+  });
   const channelMessages = await message.channel.fetch();
   const msg = channelMessages.messages.cache.get(sentMessage.id)!;
 
