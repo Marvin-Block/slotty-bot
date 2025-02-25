@@ -1,37 +1,37 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 async function main() {
   const delay = await prisma.settings.upsert({
-    where: { name: "delay" },
+    where: { name: 'delay' },
     update: {},
     create: {
-      name: "delay",
-      value: "500",
+      name: 'delay',
+      value: '750',
     },
   });
   const vdfIterations = await prisma.settings.upsert({
-    where: { name: "vdfIterations" },
+    where: { name: 'vdfIterations' },
     update: {},
     create: {
-      name: "vdfIterations",
-      value: "5000",
+      name: 'vdfIterations',
+      value: '5000',
     },
   });
   const cooldown = await prisma.settings.upsert({
-    where: { name: "cooldown" },
+    where: { name: 'cooldown' },
     update: {},
     create: {
-      name: "cooldown",
-      value: "1000",
+      name: 'cooldown',
+      value: '1000',
     },
   });
 
   const cooldownEnabled = await prisma.settings.upsert({
-    where: { name: "cooldownEnabled" },
+    where: { name: 'cooldownEnabled' },
     update: {},
     create: {
-      name: "cooldownEnabled",
-      value: "false",
+      name: 'cooldownEnabled',
+      value: 'false',
     },
   });
 

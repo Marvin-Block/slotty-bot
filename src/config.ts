@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -13,6 +13,7 @@ const {
   THREE_MONTH_PRICE,
   SALT,
   DEVELOPER_ID,
+  CASINO_CHANNEL_ID,
 } = process.env;
 
 if (
@@ -25,9 +26,10 @@ if (
   !WEEK_PRICE ||
   !THREE_MONTH_PRICE ||
   !SALT ||
-  !DEVELOPER_ID
+  !DEVELOPER_ID ||
+  !CASINO_CHANNEL_ID
 ) {
-  throw new Error("Missing environment variables");
+  throw new Error('Missing environment variables');
 }
 
 export const config = {
@@ -41,21 +43,22 @@ export const config = {
   LTC_WALLET,
   SALT,
   DEVELOPER_ID,
+  CASINO_CHANNEL_ID,
 };
 
 async function loadSettings() {
   const settings = await prisma.settings.findMany();
 
   return {
-    delay: parseInt(settings.find((s) => s.name === "delay")?.value ?? "500"),
+    delay: parseInt(settings.find((s) => s.name === 'delay')?.value ?? '500'),
     vdfIterations: parseInt(
-      settings.find((s) => s.name === "vdfIterations")?.value ?? "5000"
+      settings.find((s) => s.name === 'vdfIterations')?.value ?? '5000'
     ),
     cooldown: parseInt(
-      settings.find((s) => s.name === "cooldown")?.value ?? "5000"
+      settings.find((s) => s.name === 'cooldown')?.value ?? '5000'
     ),
     cooldownEnabled: JSON.parse(
-      settings.find((s) => s.name === "cooldownEnabled")?.value ?? "false"
+      settings.find((s) => s.name === 'cooldownEnabled')?.value ?? 'false'
     ),
   };
 }

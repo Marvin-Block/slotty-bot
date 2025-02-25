@@ -40,6 +40,7 @@ V - Waveclear
 CTRL + V - Fastclear
 SPACE - Combo
 CTRL + SPACE - Full Combo
+**K - Toggle evade**
 
 9. Can i change the hotkeys?
 Currently no.

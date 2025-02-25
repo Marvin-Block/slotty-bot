@@ -1,26 +1,25 @@
+import { PrismaClient } from '@prisma/client';
 import {
   AttachmentBuilder,
   Message,
   OmitPartialGroupDMChannel,
   User,
-  MessageFlags,
-} from "discord.js";
-import { PrismaClient } from "@prisma/client";
-import { AuditRecord, SecureRandomGenerator } from "../secure_random_number";
-import { asyncSettings } from "../config";
+} from 'discord.js';
+import { asyncSettings, config } from '../config';
+import { AuditRecord, SecureRandomGenerator } from '../secure_random_number';
 
 const prisma = new PrismaClient();
 const secRand = new SecureRandomGenerator();
-const salute = "<:salute:1335591427031306342>";
-const loadSalute = "<a:load_salute:1342202643484774400>";
-const slotty = "<:slotty:1336010394829066240>";
-const slottyGif = "<a:slotty_gif:1336009659399802900>";
+const salute = '<:salute:1335591427031306342>';
+const loadSalute = '<a:load_salute:1342202643484774400>';
+const slotty = '<:slotty:1336010394829066240>';
+const slottyGif = '<a:slotty_gif:1336009659399802900>';
 
 export async function run(
   message: OmitPartialGroupDMChannel<Message<boolean>>
 ) {
   const settings = await asyncSettings;
-
+  if (message.channelId !== config.CASINO_CHANNEL_ID) return;
   if (!message.content.startsWith(salute) || message.author.bot) return;
   if (settings.cooldownEnabled) {
     const user = await prisma.user.findFirst({
@@ -29,7 +28,7 @@ export async function run(
     if (user) {
       const lastSalute = await prisma.salute.findFirst({
         where: { userID: user.id },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       });
 
       const time1 = lastSalute?.createdAt;
@@ -37,7 +36,7 @@ export async function run(
       const diff = Math.abs(time2.getTime() - time1!.getTime());
       console.log(diff, lastSalute?.id);
       if (diff < settings.cooldown) {
-        console.log("Cooldown limiting");
+        console.log('Cooldown limiting');
         return;
       }
     }
@@ -55,10 +54,10 @@ export async function run(
   if (rng.number == 0 || rng.number == 1000) {
     // Rarity 4 - Mythical - 0.2%
     addToDB(message.author, 4, rng.auditRecord);
-    const attachment = new AttachmentBuilder("./assets/supreme_salute.gif");
+    const attachment = new AttachmentBuilder('./assets/supreme_salute.gif');
     setTimeout(() => {
       msg.edit({
-        content: "",
+        content: '',
         files: [attachment],
         allowedMentions: { repliedUser: false },
       });
@@ -85,7 +84,7 @@ export async function run(
                 slottyGif +
                 slottyGif +
                 slottyGif +
-                "\n" +
+                '\n' +
                 slottyGif +
                 salute +
                 slottyGif,
@@ -97,11 +96,11 @@ export async function run(
                   slottyGif +
                   slottyGif +
                   slottyGif +
-                  "\n" +
+                  '\n' +
                   slottyGif +
                   salute +
                   slottyGif +
-                  "\n" +
+                  '\n' +
                   slottyGif +
                   slottyGif +
                   slottyGif,
