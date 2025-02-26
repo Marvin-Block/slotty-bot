@@ -36,27 +36,31 @@ export async function execute(interaction: CommandInteraction) {
   const file = fs.readFileSync('./stats.html', 'utf-8');
 
   await interaction.deferReply();
+  const users = await prisma.user.findMany({
+    include: { salutes: true },
+  });
 
-  const userSalutes = await prisma.userSalutes.findMany({});
-
-  const groupedUsers = Object.entries(
-    Object.groupBy(
-      userSalutes,
-      ({ discordID }: { id: number; discordID: string; rarity: number }) =>
-        discordID
-    )
-  );
+  const groupedUsers = users.map((user) => [user.discordID, user.salutes]);
 
   var saluteUsers: SaluteUser[] = groupedUsers.map(([discordID, salutes]) => {
-    const normal = salutes!.filter((s) => s.rarity === 0).length;
-    const rare = salutes!.filter((s) => s.rarity === 1).length;
-    const epic = salutes!.filter((s) => s.rarity === 2).length;
-    const legendary = salutes!.filter((s) => s.rarity === 3).length;
-    const mythic = salutes!.filter((s) => s.rarity === 4).length;
+    const id = discordID as string;
+    const saluteList = salutes as {
+      createdAt: Date;
+      id: number;
+      updatedAt: Date;
+      auditId: number;
+      userID: number;
+      rarity: number;
+    }[];
+    const normal = saluteList!.filter((s) => s.rarity === 0).length;
+    const rare = saluteList!.filter((s) => s.rarity === 1).length;
+    const epic = saluteList!.filter((s) => s.rarity === 2).length;
+    const legendary = saluteList!.filter((s) => s.rarity === 3).length;
+    const mythic = saluteList!.filter((s) => s.rarity === 4).length;
     const total = normal + rare + epic + legendary + mythic;
     return {
       place: 0,
-      discordID,
+      discordID: id,
       nickname: '',
       avatarUrl: '',
       total,

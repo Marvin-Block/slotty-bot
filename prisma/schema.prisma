@@ -10,7 +10,7 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  discordID String   @unique
+  discordID String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   keys      Key[]
@@ -19,7 +19,7 @@ model User {
 
 model Key {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
+  key       String
   userID    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -55,10 +55,4 @@ model Settings {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-view UserSalutes {
-  id        Int    @unique
-  discordID String
-  rarity    Int
 }
