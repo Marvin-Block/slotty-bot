@@ -1,8 +1,9 @@
-import * as crypto from "./crypto";
-import * as echo from "./echo";
-import * as faq from "./faq";
-import * as knownissues from "./knownissues";
-import * as licenseandloader from "./licenseandloader";
+import * as crypto from './crypto';
+import * as echo from './echo';
+import * as faq from './faq';
+import * as knownissues from './knownissues';
+import * as licenseandloader from './licenseandloader';
+import * as stats from './stats';
 
 export const commands = {
   // link,
@@ -13,6 +14,7 @@ export const commands = {
   knownissues,
   faq,
   echo,
+  stats,
   /* joke commands */
   // bigredbutton,
   // ping,
