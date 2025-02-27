@@ -1,6 +1,7 @@
 import { Client, Events, MessageFlags, TextChannel } from "discord.js";
 import { commands } from "./commands";
 import * as saluteGambling from "./text-commands/salutegambling";
+import * as blacklist from "./helper/blacklist";
 import { config } from "./config";
 import { deployCommands } from "./deploy-commands";
 import { SecureRandomGenerator } from "./secure_random_number";
@@ -8,7 +9,13 @@ import { SecureRandomGenerator } from "./secure_random_number";
 const secRand = new SecureRandomGenerator();
 
 const client = new Client({
-  intents: ["Guilds", "GuildMessages", "DirectMessages", "MessageContent"],
+  intents: [
+    "Guilds",
+    "GuildMessages",
+    "DirectMessages",
+    "MessageContent",
+    "GuildMembers",
+  ],
 });
 
 client.once(Events.ClientReady, async () => {
@@ -22,6 +29,11 @@ client.on(Events.GuildCreate, async (guild) => {
 
 client.on(Events.GuildAvailable, async (guild) => {
   await deployCommands({ guildId: guild.id });
+  blacklist.checkUsers(guild);
+});
+
+client.on("guildMemberAdd", async (member) => {
+  blacklist.run(member);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -68,13 +80,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return message.edit(messageInput);
       }
     } catch (e) {
-      interaction.reply({
+      console.log(e);
+      return interaction.reply({
         content: "An error occurred",
         flags: MessageFlags.Ephemeral,
       });
-      console.log(e);
     }
   }
+  return;
 });
 
 client.on(Events.MessageCreate, async (message) => {
