@@ -9,12 +9,46 @@ datasource db {
 }
 
 model User {
+  id           Int            @id @default(autoincrement())
+  discordID    String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  keys         Key[]
+  salutes      Salute[]
+  wallet       Wallet[]
+  transactions Transactions[]
+}
+
+model Wallet {
+  id           Int            @id @default(autoincrement())
+  userID       Int            @unique
+  balance      Int
+  highestLoss  Int
+  highestWin   Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  transactions Transactions[]
+  user         User           @relation(fields: [userID], references: [id])
+}
+
+model Transactions {
   id        Int      @id @default(autoincrement())
-  discordID String
+  userID    Int
+  walletID  Int
+  amount    Int
+  type      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  keys      Key[]
-  salutes   Salute[]
+  wallet    Wallet   @relation(fields: [walletID], references: [id])
+  user      User     @relation(fields: [userID], references: [id])
+}
+
+model Blacklist {
+  id        Int      @id @default(autoincrement())
+  discordID String   @unique
+  reason    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Key {
