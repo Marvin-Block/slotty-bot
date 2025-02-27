@@ -21,6 +21,7 @@ interface BlacklistRecord {
 export const data = new SlashCommandBuilder()
   .setName("blacklist")
   .setDescription("Blacklist a user from the server.")
+  .setDefaultMemberPermissions(0)
   .addSubcommand((subcommand) =>
     subcommand
       .setName("add")
@@ -54,6 +55,20 @@ export const data = new SlashCommandBuilder()
           .setDescription(
             "The reason for removing the user from the blacklist."
           )
+          .setRequired(true)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand.setName("list").setDescription("List all blacklisted users.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("show")
+      .setDescription("Show a blacklisted user.")
+      .addStringOption((option) =>
+        option
+          .setName("user")
+          .setDescription("The User to show.")
           .setRequired(true)
       )
   );

@@ -41,16 +41,12 @@ export async function checkUsers(guild: Guild) {
       },
     });
     for (const blacklistRecord of blacklistRecords) {
-      const member = await guild.members.fetch(blacklistRecord.discordID);
+      const guildMembers = await guild.members.fetch();
+      if (guildMembers.has(blacklistRecord.discordID)) {
+        continue;
+      }
+      const member = guildMembers.get(blacklistRecord.discordID);
       if (member) {
-        await prisma.blacklist.update({
-          where: {
-            id: blacklistRecord.id,
-          },
-          data: {
-            joinAttempts: blacklistRecord.joinAttempts + 1,
-          },
-        });
         console.log(
           `Blacklisted user ${member.user.username} found. Kicking...`
         );
