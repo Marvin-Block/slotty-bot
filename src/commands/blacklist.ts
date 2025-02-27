@@ -117,7 +117,15 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
       );
     }
 
-    if (result && result.active === 1) {
+    if (!result) {
+      await prisma.$disconnect();
+      return interaction.reply({
+        content: "An error occured",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    if (result.active === 1) {
       await interaction.guild?.members.kick(userid);
       console.log(`Kicked user ${userid}`);
     }

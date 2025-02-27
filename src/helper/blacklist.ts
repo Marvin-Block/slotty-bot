@@ -23,7 +23,10 @@ export async function run(member: GuildMember) {
       });
       console.log(`Blacklisted user ${member.user.username} found. Kicking...`);
       await member.kick();
+    } else {
+      console.log(`User ${member.user.username} not blacklisted.`);
     }
+    await prisma.$disconnect();
   } catch (e) {
     console.error(e);
     await prisma.$disconnect();
