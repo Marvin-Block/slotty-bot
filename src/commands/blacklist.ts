@@ -140,6 +140,7 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
       let next = new ButtonBuilder()
         .setCustomId('next')
         .setLabel('Next Page')
+        .setDisabled(currentPage + 1 === chunks.length)
         .setStyle(ButtonStyle.Primary);
 
       let page = new ButtonBuilder()
