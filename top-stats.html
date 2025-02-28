@@ -1,0 +1,92 @@
+<html>
+
+	<head>
+		<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;1,300&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Alata&display=swap" rel="stylesheet">
+		<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+	</head>
+	<style>
+		body {
+			/* From: https://coolors.co/gradient-maker/0b48d5-540192?position=30,70&opacity=100,100&type=linear&rotation=225 */
+			height: fit-content;
+			background: hsla(222, 90%, 44%, 1);
+			background: linear-gradient(225deg, hsla(222, 90%, 44%, 1) 30%, hsla(274, 99%, 29%, 1) 70%);
+			background: -moz-linear-gradient(225deg, hsla(222, 90%, 44%, 1) 30%, hsla(274, 99%, 29%, 1) 70%);
+			background: -webkit-linear-gradient(225deg, hsla(222, 90%, 44%, 1) 30%, hsla(274, 99%, 29%, 1) 70%);
+			filter: progid: DXImageTransform.Microsoft.gradient( startColorstr="#0B48D5", endColorstr="#540192", GradientType=1 );
+		}
+		.bg-glass {
+			/* From https://css.glass */
+			width: 100%;
+			height: fit-content;
+			background: rgba(255, 255, 255, 0.15);
+			box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+			backdrop-filter: blur(9.1px);
+			-webkit-backdrop-filter: blur(9.1px);
+			border: 1px solid color-mix(in oklab, var(--color-gray-200) 20%, transparent);
+		}
+		.background {
+			width: 100%;
+			height: fit-content;
+			background: rgba(255, 255, 255, 0.05);
+			box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+			backdrop-filter: blur(9.1px);
+			-webkit-backdrop-filter: blur(9.1px);
+		}
+	</style>
+	<body>
+		<div class="background">
+			<div class="px-[16px] py-[8px]">
+				<div class="inline-block min-w-full py-2 align-middle px-6 px-8">
+					<!-- Custom "table" -->
+					<div class="w-full grid grid-cols-1 gap-4">
+						{{#each users}}
+							<div class="grid grid-cols-17 bg-glass rounded-md divide-x divide-gray-200/20">
+								<div class="col-span-1 flex flex-col items-center justify-center px-3 py-5 text-sm whitespace-nowrap text-center">
+									<div class="text-gray-200">{{this.place}}</div>
+								</div>
+								<div class="col-span-4 py-5 px-3 text-sm whitespace-nowrap">
+									<div class="flex items-center">
+										<!-- AVATAR -->
+										<div class="size-11 shrink-0">
+											<img class="size-11 rounded-full" src="{{this.avatarUrl}}" alt="">
+										</div>
+										<!-- NAME -->
+										<div class="ml-4 w-[10rem]">
+											<div class="font-medium text-gray-200 overflow-hidden text-ellipsis">{{this.nickname}}</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+									<div class="text-gray-200">Total</div>
+									<div class="mt-1 text-gray-300">{{total}}</div>
+								</div>
+								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+									<div class="text-gray-200">Normal</div>
+									<div class="mt-1 text-gray-300">{{normal}}</div>
+								</div>
+								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+									<div class="text-gray-200">Rare</div>
+									<div class="mt-1 text-gray-300">{{rare}}</div>
+								</div>
+								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+									<div class="text-gray-200">Epic</div>
+									<div class="mt-1 text-gray-300">{{epic}}</div>
+								</div>
+								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+									<div class="text-gray-200">Legendary</div>
+									<div class="mt-1 text-gray-300">{{legendary}}</div>
+								</div>
+								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+									<div class="text-gray-200">Mythic</div>
+									<div class="mt-1 text-gray-300">{{mythic}}</div>
+								</div>
+							</div>
+						{{/each}}
+					 </div>
+
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
