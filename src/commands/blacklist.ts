@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   CacheType,
   CommandInteraction,
+  ComponentType,
+  EmbedBuilder,
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -90,16 +95,111 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
           flags: MessageFlags.Ephemeral,
         });
       }
-      let response = 'Blacklisted Users:\n';
-      users.forEach((user) => {
-        response += `User: ${user.discordID} Reason: ${user.reason} - Active: ${user.active}\n`;
+      var responseArr = [];
+
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
+        const isActiveUser = await interaction.guild?.members.fetch(
+          user.updatedBy
+        );
+        const updatedBy = isActiveUser
+          ? `<@${user.updatedBy}>`
+          : user.updatedBy;
+        var message = '';
+        message += `- UserID: \`${user.discordID}\`\n`;
+        message += `- Active: ${user.active ? 'Yes' : 'No'}\n`;
+        message += `- Reason: ${user.reason}\n`;
+        message += `-# Updated By: ${updatedBy}\n`;
+        message += `-# Created At: ${formatDate(user.createdAt)}\n`;
+        message += `-# Updated At: ${formatDate(user.updatedAt)}`;
+        responseArr.push(message);
+      }
+
+      let chunks = [];
+      for (let i = 0; i < responseArr.length; i++) {
+        const chunkSize = 5;
+        if (i % chunkSize === 0) {
+          const embed = new EmbedBuilder()
+            .setTitle('Blacklisted Users')
+            .setColor('#601499')
+            .setDescription(
+              responseArr.slice(i, i + chunkSize).join('\n────────────────\n')
+            );
+          chunks.push(embed);
+        }
+      }
+
+      let currentPage = 0;
+
+      let prev = new ButtonBuilder()
+        .setCustomId('prev')
+        .setLabel('Previous page')
+        .setDisabled(true)
+        .setStyle(ButtonStyle.Primary);
+
+      let next = new ButtonBuilder()
+        .setCustomId('next')
+        .setLabel('Next Page')
+        .setStyle(ButtonStyle.Primary);
+
+      let page = new ButtonBuilder()
+        .setCustomId('page')
+        .setLabel('1 / ' + chunks.length)
+        .setDisabled(true)
+        .setStyle(ButtonStyle.Primary);
+
+      const row = new ActionRowBuilder().addComponents(prev, page, next);
+      const response = await interaction.reply({
+        embeds: [chunks[0]],
+        flags: MessageFlags.Ephemeral,
+        components: [row],
+        withResponse: true,
       });
 
-      // TODO: Add a better way to display the user
-      return await interaction.reply({
-        content: response,
-        flags: MessageFlags.Ephemeral,
-      });
+      const collector =
+        response.resource?.message?.createMessageComponentCollector({
+          componentType: ComponentType.Button,
+          time: 3_600_000,
+        });
+      if (collector) {
+        collector.on('collect', async (i) => {
+          if (i.customId === 'next') {
+            if (currentPage + 1 < chunks.length) {
+              currentPage++;
+              prev.setDisabled(false);
+              page.setLabel(`${currentPage + 1} / ${chunks.length}`);
+              i.update({
+                embeds: [chunks[currentPage]],
+                components: [row],
+                withResponse: true,
+              });
+            } else {
+              next.setDisabled(true);
+              i.update({
+                components: [row],
+              });
+            }
+          }
+          if (i.customId === 'prev') {
+            if (currentPage - 1 >= 0) {
+              currentPage--;
+              next.setDisabled(false);
+              page.setLabel(`${currentPage + 1} / ${chunks.length}`);
+              i.update({
+                embeds: [chunks[currentPage]],
+                components: [row],
+                withResponse: true,
+              });
+            } else {
+              prev.setDisabled(true);
+              i.update({
+                components: [row],
+              });
+            }
+          }
+        });
+      }
+      break;
     case 'show':
       if (!userid) {
         return interaction.reply({
@@ -115,10 +215,26 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
           flags: MessageFlags.Ephemeral,
         });
       }
+      const isActiveUser = await interaction.guild?.members.fetch(
+        user.updatedBy
+      );
+      const updatedBy = isActiveUser ? `<@${user.updatedBy}>` : user.updatedBy;
 
-      // TODO: Add a better way to display the user
+      var message = '';
+      message += `- UserID: \`${user.discordID}\`\n`;
+      message += `- Active: ${user.active ? 'Yes' : 'No'}\n`;
+      message += `- Reason: ${user.reason}\n`;
+      message += `-# Updated By: ${updatedBy}\n`;
+      message += `-# Created At: ${formatDate(user.createdAt)}\n`;
+      message += `-# Updated At: ${formatDate(user.updatedAt)}`;
+
+      const embed = new EmbedBuilder()
+        .setTitle('Blacklisted User')
+        .setColor('#601499')
+        .setDescription(message);
+
       return await interaction.reply({
-        content: `User: ${user.discordID} Reason: ${user.reason} - Active: ${user.active}`,
+        embeds: [embed],
         flags: MessageFlags.Ephemeral,
       });
     case 'add':
@@ -156,6 +272,7 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
     default:
       return;
   }
+  return;
 }
 
 async function addUser(
@@ -238,7 +355,9 @@ async function showUser(userid: string) {
 }
 async function listUsers() {
   try {
-    const result: BlacklistRecord[] = await prisma.blacklist.findMany();
+    const result: BlacklistRecord[] = await prisma.blacklist.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
     console.log(`Listing ${result.length} blacklisted users`);
     await prisma.$disconnect();
     return result;
@@ -247,4 +366,15 @@ async function listUsers() {
     await prisma.$disconnect();
     return undefined;
   }
+}
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 }

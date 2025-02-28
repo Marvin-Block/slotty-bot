@@ -1,25 +1,26 @@
-import { Client, Events, MessageFlags, TextChannel } from "discord.js";
-import { commands } from "./commands";
-import * as saluteGambling from "./text-commands/salutegambling";
-import * as blacklist from "./helper/blacklist";
-import { config } from "./config";
-import { deployCommands } from "./deploy-commands";
-import { SecureRandomGenerator } from "./secure_random_number";
+import { Client, Events, MessageFlags, TextChannel } from 'discord.js';
+import { commands } from './commands';
+import { config } from './config';
+import { deployCommands } from './deploy-commands';
+import * as blacklist from './helper/blacklist';
+import { SecureRandomGenerator } from './secure_random_number';
+import * as saluteGambling from './text-commands/salutegambling';
 
 const secRand = new SecureRandomGenerator();
 
 const client = new Client({
   intents: [
-    "Guilds",
-    "GuildMessages",
-    "DirectMessages",
-    "MessageContent",
-    "GuildMembers",
+    'GuildMessageReactions',
+    'Guilds',
+    'GuildMessages',
+    'DirectMessages',
+    'MessageContent',
+    'GuildMembers',
   ],
 });
 
 client.once(Events.ClientReady, async () => {
-  console.log("Discord bot is ready! 🤖");
+  console.log('Discord bot is ready! 🤖');
   secRand.generateCommitment();
 });
 
@@ -32,7 +33,7 @@ client.on(Events.GuildAvailable, async (guild) => {
   blacklist.checkUsers(guild);
 });
 
-client.on("guildMemberAdd", async (member) => {
+client.on(Events.GuildMemberAdd, async (member) => {
   blacklist.run(member);
 });
 
@@ -50,13 +51,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isModalSubmit()) return;
 
-  if (interaction.customId === "echoModal") {
-    const channelid = interaction.fields.getTextInputValue("channelid");
-    const messageid = interaction.fields.getTextInputValue("messageid");
-    const messageInput = interaction.fields.getTextInputValue("messageInput");
+  if (interaction.customId === 'echoModal') {
+    const channelid = interaction.fields.getTextInputValue('channelid');
+    const messageid = interaction.fields.getTextInputValue('messageid');
+    const messageInput = interaction.fields.getTextInputValue('messageInput');
     if (messageInput.length > 2000) {
       return interaction.reply(
-        "Message is too long, please keep it under 2000 characters"
+        'Message is too long, please keep it under 2000 characters'
       );
     }
 
@@ -73,7 +74,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         const message = await channel.messages.fetch(messageid);
         if (!message)
           return interaction.reply({
-            content: "Message not found",
+            content: 'Message not found',
             flags: MessageFlags.Ephemeral,
           });
 
@@ -82,7 +83,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } catch (e) {
       console.log(e);
       return interaction.reply({
-        content: "An error occurred",
+        content: 'An error occurred',
         flags: MessageFlags.Ephemeral,
       });
     }
