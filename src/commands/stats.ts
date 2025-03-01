@@ -72,6 +72,9 @@ export async function execute(interaction: CommandInteraction) {
     const mythic = saluteUser.salutes.filter((s) => s.rarity === 4).length;
     const total = normal + rare + epic + legendary + mythic;
 
+    const member = await interaction.guild?.members.fetch(user.id);
+    await member?.user.fetch();
+
     await nodeHtmlToImage({
       output: "./assets/stats.png",
       html: file,
@@ -88,12 +91,15 @@ export async function execute(interaction: CommandInteraction) {
       handlebarsHelpers: {},
       content: {
         user: {
-          avatarUrl: user.displayAvatarURL({
+          avatarUrl: member!.displayAvatarURL({
             extension: "png",
             size: 4096,
           }),
           nickname: user.displayName,
           username: user.username,
+          banner:
+            member!.displayBannerURL({ extension: "webp", size: 4096 }) ??
+            "https://zipline.sephiran.com/u/Tx4KlZ.gif",
           total,
           normal,
           rare,
