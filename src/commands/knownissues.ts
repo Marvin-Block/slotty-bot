@@ -4,6 +4,8 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 
+export const type = 'slash';
+
 export const data = new SlashCommandBuilder()
   .setName('knownissues')
   .setContexts(InteractionContextType.Guild)

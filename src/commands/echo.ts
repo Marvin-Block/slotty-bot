@@ -9,6 +9,8 @@ import {
   TextInputStyle,
 } from 'discord.js';
 
+export const type = 'slash';
+
 export const data = new SlashCommandBuilder()
   .setName('echo')
   .setContexts(InteractionContextType.Guild)

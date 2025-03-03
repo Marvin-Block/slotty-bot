@@ -15,6 +15,8 @@ import { fixedImageOptions, fixedOptions, SaluteUser } from '../typeFixes';
 
 const prisma = new PrismaClient();
 
+export const type = 'slash & context';
+
 export const data = new SlashCommandBuilder()
   .setName('stats')
   .addSubcommand((subcommand) =>

@@ -6,7 +6,6 @@ import * as gambling from './gambling';
 import * as knownissues from './knownissues';
 import * as licenseandloader from './licenseandloader';
 import * as stats from './stats';
-
 export const commands = {
   // link,
   // users,

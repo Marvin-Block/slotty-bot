@@ -36,30 +36,14 @@ const client = new Client({
 client.commands = new Collection();
 client.contextMenuCommands = new Collection();
 
-// const commandsPath = path.join(__dirname, 'commands');
-// const commandFiles = fs
-//   .readdirSync(commandsPath)
-//   .filter((file) => file.endsWith('.ts'));
-
 let t: keyof typeof commands;
 
 for (t in commands) {
   const command = commands[t];
-  client.commands.set(command.data.name, command);
+  if (command.type === 'slash') client.commands.set(command.data.name, command);
+  if (command.type === 'slash & context')
+    client.contextMenuCommands.set(command.contextMenuData.name, command);
 }
-
-// for (const file of commandFiles) {
-//   const filePath = path.join(commandsPath, file);
-//   const command = require(filePath);
-//   if ('data' in command && 'execute' in command) {
-//     client.commands.set(command.data.name, command);
-//   } else {
-//     console.log(`Command ${file} is missing data or execute function`);
-//   }
-//   if ('contextMenuData' in command && 'contextMenuExecute' in command) {
-//     client.contextMenuCommands.set(command.contextMenuData.name, command);
-//   }
-// }
 
 client.once(Events.ClientReady, async () => {
   console.log('Discord bot is ready! 🤖');

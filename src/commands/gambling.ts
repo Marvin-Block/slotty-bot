@@ -10,6 +10,8 @@ import {
 import { fixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 
+export const type = 'slash';
+
 export const data = new SlashCommandBuilder()
   .setName('gambling')
   .setDescription('Gambling commands.')
