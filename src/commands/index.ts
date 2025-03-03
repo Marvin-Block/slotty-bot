@@ -1,4 +1,5 @@
 import * as blacklist from './blacklist';
+import * as bookmark from './bookmark';
 import * as crypto from './crypto';
 import * as echo from './echo';
 import * as faq from './faq';
@@ -10,6 +11,7 @@ export const commands = {
   // link,
   // users,
   // keys,
+  bookmark,
   crypto,
   licenseandloader,
   knownissues,

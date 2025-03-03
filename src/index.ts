@@ -37,7 +37,7 @@ for (t in commands) {
   if (command.type === 'slash') {
     client.commands.set(command.data.name, command);
   }
-  if (command.name === 'stats') {
+  if (command.type == 'contextMenu' || command.name === 'stats') {
     client.contextMenuCommands.set(command.contextMenuData.name, command);
   }
   if (command.name === 'echo') {
