@@ -5,6 +5,7 @@ import {
 } from 'discord.js';
 
 export const type = 'slash';
+export const name = 'faq';
 
 export const data = new SlashCommandBuilder()
   .setName('faq')

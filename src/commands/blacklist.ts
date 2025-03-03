@@ -16,6 +16,7 @@ import { BlacklistRecord, fixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 
 export const type = 'slash';
+export const name = 'blacklist';
 
 export const data = new SlashCommandBuilder()
   .setName('blacklist')

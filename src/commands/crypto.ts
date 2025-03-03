@@ -8,6 +8,7 @@ import { fixedOptions } from '../typeFixes';
 const options = { method: 'GET', headers: { accept: 'text/plain' } };
 
 export const type = 'slash';
+export const name = 'crypto';
 
 export const data = new SlashCommandBuilder()
   .setName('crypto')

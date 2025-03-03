@@ -12,6 +12,7 @@ export interface fixedOptions extends CommandInteractionOptionResolver {
 export interface extendedClient extends Client {
   commands: Collection<string, any>;
   contextMenuCommands: Collection<string, any>;
+  modalCommands: Collection<string, any>;
 }
 
 export interface fixedImageOptions extends Options {

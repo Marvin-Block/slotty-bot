@@ -1,10 +1,4 @@
-import {
-  Client,
-  Collection,
-  Events,
-  MessageFlags,
-  TextChannel,
-} from 'discord.js';
+import { Client, Collection, Events, MessageFlags } from 'discord.js';
 // import * as fs from 'fs';
 // import * as path from 'path';
 import { commands } from './commands';
@@ -35,14 +29,20 @@ const client = new Client({
 
 client.commands = new Collection();
 client.contextMenuCommands = new Collection();
+client.modalCommands = new Collection();
 
 let t: keyof typeof commands;
-
 for (t in commands) {
   const command = commands[t];
-  if (command.type === 'slash') client.commands.set(command.data.name, command);
-  if (command.type === 'slash & context')
+  if (command.type === 'slash') {
+    client.commands.set(command.data.name, command);
+  }
+  if (command.name === 'stats') {
     client.contextMenuCommands.set(command.contextMenuData.name, command);
+  }
+  if (command.name === 'echo') {
+    client.modalCommands.set(command.cutomId, command);
+  }
 }
 
 client.once(Events.ClientReady, async () => {
@@ -114,52 +114,31 @@ client.on(Events.InteractionCreate, async (interaction) => {
         });
       }
     }
+  } else if (interaction.isModalSubmit()) {
+    const command = client.modalCommands.get(interaction.customId);
+    if (!command) {
+      console.error(`Command ${interaction.customId} not found`);
+      return;
+    }
+    try {
+      return await command.handleModal(interaction);
+    } catch (error) {
+      console.error(error);
+      if (interaction.replied || interaction.deferred) {
+        return await interaction.followUp({
+          content: 'There was an error while executing this command!',
+          flags: MessageFlags.Ephemeral,
+        });
+      } else {
+        return await interaction.reply({
+          content: 'There was an error while executing this command!',
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    }
   } else {
     return;
   }
-});
-
-client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isModalSubmit()) return;
-
-  if (interaction.customId === 'echoModal') {
-    const channelid = interaction.fields.getTextInputValue('channelid');
-    const messageid = interaction.fields.getTextInputValue('messageid');
-    const messageInput = interaction.fields.getTextInputValue('messageInput');
-    if (messageInput.length > 2000) {
-      return interaction.reply(
-        'Message is too long, please keep it under 2000 characters'
-      );
-    }
-
-    try {
-      if (!messageid) {
-        const channel = client.channels.cache.get(channelid) as TextChannel;
-        if (!channel) return interaction.reply(messageInput);
-
-        return channel.send(messageInput);
-      } else {
-        const channel = client.channels.cache.get(channelid) as TextChannel;
-        if (!channel) return interaction.reply(messageInput);
-
-        const message = await channel.messages.fetch(messageid);
-        if (!message)
-          return interaction.reply({
-            content: 'Message not found',
-            flags: MessageFlags.Ephemeral,
-          });
-
-        return message.edit(messageInput);
-      }
-    } catch (e) {
-      console.log(e);
-      return interaction.reply({
-        content: 'An error occurred',
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-  }
-  return;
 });
 
 client.on(Events.MessageCreate, async (message) => {

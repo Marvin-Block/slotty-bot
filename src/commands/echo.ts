@@ -1,15 +1,21 @@
 import {
   ActionRowBuilder,
+  CacheType,
   CommandInteraction,
   InteractionContextType,
+  MessageFlags,
   ModalActionRowComponentBuilder,
   ModalBuilder,
+  ModalSubmitInteraction,
   SlashCommandBuilder,
+  TextChannel,
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
 
 export const type = 'slash';
+export const name = 'echo';
+export const cutomId = 'echoModal';
 
 export const data = new SlashCommandBuilder()
   .setName('echo')
@@ -19,9 +25,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   // Create the modal
-  const modal = new ModalBuilder()
-    .setCustomId('echoModal')
-    .setTitle('Echo Modal');
+  const modal = new ModalBuilder().setCustomId(cutomId).setTitle('Echo Modal');
 
   const channelid = new TextInputBuilder()
     .setCustomId('channelid')
@@ -61,4 +65,48 @@ export async function execute(interaction: CommandInteraction) {
 
   // Show the modal to the user
   await interaction.showModal(modal);
+}
+
+export async function handleModal(
+  interaction: ModalSubmitInteraction<CacheType>
+) {
+  const channelid = interaction.fields.getTextInputValue('channelid');
+  const messageid = interaction.fields.getTextInputValue('messageid');
+  const messageInput = interaction.fields.getTextInputValue('messageInput');
+  if (messageInput.length > 2000) {
+    return interaction.reply(
+      'Message is too long, please keep it under 2000 characters'
+    );
+  }
+
+  try {
+    if (!messageid) {
+      const channel = interaction.client.channels.cache.get(
+        channelid
+      ) as TextChannel;
+      if (!channel) return interaction.reply(messageInput);
+
+      return channel.send(messageInput);
+    } else {
+      const channel = interaction.client.channels.cache.get(
+        channelid
+      ) as TextChannel;
+      if (!channel) return interaction.reply(messageInput);
+
+      const message = await channel.messages.fetch(messageid);
+      if (!message)
+        return interaction.reply({
+          content: 'Message not found',
+          flags: MessageFlags.Ephemeral,
+        });
+
+      return message.edit(messageInput);
+    }
+  } catch (e) {
+    console.log(e);
+    return interaction.reply({
+      content: 'An error occurred',
+      flags: MessageFlags.Ephemeral,
+    });
+  }
 }
