@@ -1,16 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   CacheType,
+  Collection,
   CommandInteraction,
-  ComponentType,
   EmbedBuilder,
-  MessageActionRowComponentBuilder,
   MessageFlags,
   SlashCommandBuilder,
+  userMention,
 } from 'discord.js';
+import { paginate } from '../helper/pagination';
 import { BlacklistRecord, fixedOptions } from '../typeFixes';
 
 const prisma = new PrismaClient();
@@ -89,115 +87,39 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
           flags: MessageFlags.Ephemeral,
         });
       }
-      var responseArr = [];
 
-      for (let i = 0; i < users.length; i++) {
-        const user = users[i];
-        const isActiveUser = await interaction.guild?.members.fetch(
-          user.updatedBy
+      const headers: Collection<string, string> = new Collection();
+      headers.set('discordID', '- UserID');
+      headers.set('active', '- Active');
+      headers.set('reason', '- Reason');
+      headers.set('updatedBy', '-# Updated By');
+      headers.set('createdAt', '-# Created At');
+      headers.set('updatedAt', '-# Updated At');
+
+      const userList: Collection<string, any>[] = users.map((user) => {
+        const fields: Collection<string, any> = new Collection();
+        const isActiveUser = interaction.guild?.members.fetch(user.updatedBy);
+
+        fields.set('discordID', '`' + user.discordID + '`');
+        fields.set('active', user.active ? 'Yes' : 'No');
+        fields.set('reason', user.reason);
+        fields.set(
+          'updatedBy',
+          isActiveUser ? userMention(user.updatedBy) : user.updatedBy
         );
-        const updatedBy = isActiveUser
-          ? `<@${user.updatedBy}>`
-          : user.updatedBy;
-        var message = '';
-        message += `- UserID: \`${user.discordID}\`\n`;
-        message += `- Active: ${user.active ? 'Yes' : 'No'}\n`;
-        message += `- Reason: ${user.reason}\n`;
-        message += `-# Updated By: ${updatedBy}\n`;
-        message += `-# Created At: ${formatDate(user.createdAt)}\n`;
-        message += `-# Updated At: ${formatDate(user.updatedAt)}`;
-        responseArr.push(message);
-      }
-
-      let chunks = [];
-      for (let i = 0; i < responseArr.length; i++) {
-        const chunkSize = 5;
-        if (i % chunkSize === 0) {
-          const embed = new EmbedBuilder()
-            .setTitle('Blacklisted Users')
-            .setColor('#601499')
-            .setDescription(
-              responseArr.slice(i, i + chunkSize).join('\n────────────────\n')
-            );
-          chunks.push(embed);
-        }
-      }
-
-      let currentPage = 0;
-
-      let prev = new ButtonBuilder()
-        .setCustomId('prev')
-        .setLabel('Previous page')
-        .setDisabled(true)
-        .setStyle(ButtonStyle.Primary);
-
-      let next = new ButtonBuilder()
-        .setCustomId('next')
-        .setLabel('Next Page')
-        .setDisabled(currentPage + 1 === chunks.length)
-        .setStyle(ButtonStyle.Primary);
-
-      let page = new ButtonBuilder()
-        .setCustomId('page')
-        .setLabel('1 / ' + chunks.length)
-        .setDisabled(true)
-        .setStyle(ButtonStyle.Primary);
-
-      const row = new ActionRowBuilder().addComponents(
-        prev,
-        page,
-        next
-      ) as ActionRowBuilder<MessageActionRowComponentBuilder>;
-      const response = await interaction.reply({
-        embeds: [chunks[0]],
-        flags: MessageFlags.Ephemeral,
-        components: [row],
-        withResponse: true,
+        fields.set('createdAt', formatDate(user.createdAt));
+        fields.set('updatedAt', formatDate(user.updatedAt));
+        return fields;
       });
 
-      const collector =
-        response.resource?.message?.createMessageComponentCollector({
-          componentType: ComponentType.Button,
-          time: 3_600_000,
-        });
-      if (collector) {
-        collector.on('collect', async (i) => {
-          if (i.customId === 'next') {
-            if (currentPage + 1 < chunks.length) {
-              currentPage++;
-              prev.setDisabled(false);
-              page.setLabel(`${currentPage + 1} / ${chunks.length}`);
-              i.update({
-                embeds: [chunks[currentPage]],
-                components: [row],
-                withResponse: true,
-              });
-            } else {
-              next.setDisabled(true);
-              i.update({
-                components: [row],
-              });
-            }
-          }
-          if (i.customId === 'prev') {
-            if (currentPage - 1 >= 0) {
-              currentPage--;
-              next.setDisabled(false);
-              page.setLabel(`${currentPage + 1} / ${chunks.length}`);
-              i.update({
-                embeds: [chunks[currentPage]],
-                components: [row],
-                withResponse: true,
-              });
-            } else {
-              prev.setDisabled(true);
-              i.update({
-                components: [row],
-              });
-            }
-          }
-        });
-      }
+      paginate({
+        interaction,
+        headers,
+        values: userList,
+        chunkSize: 5,
+        title: 'Blacklisted Users',
+      });
+
       break;
     case 'show':
       if (!userid) {

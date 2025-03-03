@@ -6,7 +6,9 @@ import * as faq from './faq';
 import * as gambling from './gambling';
 import * as knownissues from './knownissues';
 import * as licenseandloader from './licenseandloader';
+import * as reminder from './reminder';
 import * as stats from './stats';
+
 export const commands = {
   // link,
   // users,
@@ -20,4 +22,5 @@ export const commands = {
   stats,
   blacklist,
   gambling,
+  reminder,
 };
