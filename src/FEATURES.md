@@ -25,7 +25,6 @@
 
 # Top Lane
 
-- **Irelia** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Jayce** (Q, W, E) [Author: <@693972199727562793>]
 - **Mordekaiser** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
@@ -35,8 +34,8 @@
 
 - **Amumu** (Q, R) [Author: <@693972199727562793>]
 - **Diana** (Q, W, E, R) [Author: <@693972199727562793>]
+- **Hecarim** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
-- **Swain** (Q, W, E, R) [Author: <@693972199727562793>]
 
 # Mid Lane
 
