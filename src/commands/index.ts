@@ -17,7 +17,4 @@ export const commands = {
   echo,
   stats,
   blacklist,
-  /* joke commands */
-  // bigredbutton,
-  // ping,
 };
