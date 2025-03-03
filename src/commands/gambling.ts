@@ -125,13 +125,13 @@ async function daily(interaction: CommandInteraction) {
       });
     }
 
-    const receipt = await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.update({
         where: { id: user.wallet!.id },
         data: { balance: { increment: 100 } },
       });
 
-      const transaction = tx.transactions.create({
+      tx.transactions.create({
         data: {
           amount: 100,
           type: "daily",
@@ -139,11 +139,7 @@ async function daily(interaction: CommandInteraction) {
           user: { connect: { discordID: interaction.user.id } },
         },
       });
-
-      return transaction;
     });
-
-    console.log(receipt);
     prisma.$disconnect();
 
     return await interaction.reply(
@@ -192,40 +188,35 @@ async function transfer(interaction: CommandInteraction) {
       return interaction.reply("You don't have enough money to transfer.");
     }
 
-    const [senderReceipt, receiverReceipt] = await prisma.$transaction(
-      async (tx) => {
-        const senderWallet = await tx.wallet.update({
-          where: { id: user.wallet!.id },
-          data: { balance: { decrement: amount } },
-        });
+    await prisma.$transaction(async (tx) => {
+      const senderWallet = await tx.wallet.update({
+        where: { id: user.wallet!.id },
+        data: { balance: { decrement: amount } },
+      });
 
-        const senderTransaction = await tx.transactions.create({
-          data: {
-            amount: -amount,
-            type: "transfer",
-            wallet: { connect: { id: senderWallet.id } },
-            user: { connect: { discordID: interaction.user.id } },
-          },
-        });
+      tx.transactions.create({
+        data: {
+          amount: -amount,
+          type: "transfer",
+          wallet: { connect: { id: senderWallet.id } },
+          user: { connect: { discordID: interaction.user.id } },
+        },
+      });
 
-        const receiverWallet = await tx.wallet.update({
-          where: { id: recipient.wallet!.id },
-          data: { balance: { increment: amount } },
-        });
+      const receiverWallet = await tx.wallet.update({
+        where: { id: recipient.wallet!.id },
+        data: { balance: { increment: amount } },
+      });
 
-        const receiverTransaction = await tx.transactions.create({
-          data: {
-            amount,
-            type: "transfer",
-            wallet: { connect: { id: receiverWallet.id } },
-            user: { connect: { discordID: to.id } },
-          },
-        });
-
-        return [senderTransaction, receiverTransaction];
-      }
-    );
-    console.log(senderReceipt, receiverReceipt);
+      tx.transactions.create({
+        data: {
+          amount,
+          type: "transfer",
+          wallet: { connect: { id: receiverWallet.id } },
+          user: { connect: { discordID: to.id } },
+        },
+      });
+    });
 
     prisma.$disconnect();
 
