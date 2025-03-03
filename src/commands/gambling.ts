@@ -70,69 +70,90 @@ module.exports = {
 };
 
 async function balance(interaction: CommandInteraction) {
-  const user = await prisma.user.findFirst({
-    where: { discordID: interaction.user.id },
-    include: { wallet: true },
-  });
-  if (!user || !user.wallet) {
-    return interaction.reply({
-      content: "An error occurred.",
+  try {
+    const user = await prisma.user.findFirst({
+      where: { discordID: interaction.user.id },
+      include: { wallet: true },
+    });
+    if (!user || !user.wallet) {
+      return interaction.reply({
+        content: "An error occurred.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    return await interaction.reply({
+      content: `Your balance is ${user.wallet.balance} coins.`,
       flags: MessageFlags.Ephemeral,
     });
+  } catch (error) {
+    console.error(error);
+    prisma.$disconnect();
+    return interaction.reply("An error occurred.");
   }
-  return await interaction.reply({
-    content: `Your balance is ${user.wallet.balance} coins.`,
-    flags: MessageFlags.Ephemeral,
-  });
 }
 
 async function daily(interaction: CommandInteraction) {
-  const user = await prisma.user.upsert({
-    where: { discordID: interaction.user.id },
-    update: {},
-    create: { discordID: interaction.user.id },
-    include: { wallet: true, transactions: true },
-  });
-  if (!user || !user.wallet) {
-    return interaction.reply({
-      content: "An error occurred.",
-      flags: MessageFlags.Ephemeral,
+  try {
+    const user = await prisma.user.upsert({
+      where: { discordID: interaction.user.id },
+      update: {},
+      create: { discordID: interaction.user.id },
+      include: { wallet: true, transactions: true },
     });
-  }
+    if (!user || !user.wallet) {
+      return interaction.reply({
+        content: "An error occurred.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
 
-  const ONE_HOUR = 3_600_000;
+    const ONE_HOUR = 3_600_000;
 
-  const lastDaily = user.transactions.find(
-    (t) =>
-      t.type === "daily" && t.createdAt > new Date(Date.now() - ONE_HOUR * 20)
-  );
+    const lastDaily = user.transactions.find(
+      (t) =>
+        t.type === "daily" && t.createdAt > new Date(Date.now() - ONE_HOUR * 20)
+    );
 
-  if (lastDaily) {
-    const date = new Date(lastDaily.createdAt.getTime() + ONE_HOUR * 20);
-    return interaction.reply({
-      content: `You can claim your daily reward in ${time(
-        date,
-        TimestampStyles.RelativeTime
-      )}`,
-      flags: MessageFlags.Ephemeral,
+    if (lastDaily) {
+      const date = new Date(lastDaily.createdAt.getTime() + ONE_HOUR * 20);
+      return interaction.reply({
+        content: `You can claim your daily reward in ${time(
+          date,
+          TimestampStyles.RelativeTime
+        )}`,
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    const receipt = await prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.update({
+        where: { id: user.wallet!.id },
+        data: { balance: { increment: 100 } },
+      });
+
+      const transaction = tx.transactions.create({
+        data: {
+          amount: 100,
+          type: "daily",
+          wallet: { connect: { id: wallet.id } },
+          user: { connect: { discordID: interaction.user.id } },
+        },
+      });
+
+      return transaction;
     });
+
+    console.log(receipt);
+    prisma.$disconnect();
+
+    return await interaction.reply(
+      "You claimed your daily reward of 100 coins!"
+    );
+  } catch (error) {
+    console.error(error);
+    prisma.$disconnect();
+    return interaction.reply("An error occurred.");
   }
-
-  const wallet = await prisma.wallet.update({
-    where: { id: user.wallet.id },
-    data: { balance: { increment: 100 } },
-  });
-
-  await prisma.transactions.create({
-    data: {
-      amount: 100,
-      type: "daily",
-      wallet: { connect: { id: wallet.id } },
-      user: { connect: { discordID: interaction.user.id } },
-    },
-  });
-
-  return await interaction.reply("You claimed your daily reward of 100 coins!");
 }
 
 async function transfer(interaction: CommandInteraction) {
@@ -152,55 +173,68 @@ async function transfer(interaction: CommandInteraction) {
     return await interaction.reply("You can't transfer money to a bot.");
   }
 
-  const user = await prisma.user.findFirst({
-    where: { discordID: interaction.user.id },
-    include: { wallet: true },
-  });
+  try {
+    const user = await prisma.user.findFirst({
+      where: { discordID: interaction.user.id },
+      include: { wallet: true },
+    });
 
-  const recipient = await prisma.user.findFirst({
-    where: { discordID: to.id },
-    include: { wallet: true },
-  });
+    const recipient = await prisma.user.findFirst({
+      where: { discordID: to.id },
+      include: { wallet: true },
+    });
 
-  if (!user || !user.wallet || !recipient || !recipient.wallet) {
+    if (!user || !user.wallet || !recipient || !recipient.wallet) {
+      return interaction.reply("An error occurred.");
+    }
+
+    if (user.wallet.balance < amount) {
+      return interaction.reply("You don't have enough money to transfer.");
+    }
+
+    const [senderReceipt, receiverReceipt] = await prisma.$transaction(
+      async (tx) => {
+        const senderWallet = await tx.wallet.update({
+          where: { id: user.wallet!.id },
+          data: { balance: { decrement: amount } },
+        });
+
+        const senderTransaction = await tx.transactions.create({
+          data: {
+            amount: -amount,
+            type: "transfer",
+            wallet: { connect: { id: senderWallet.id } },
+            user: { connect: { discordID: interaction.user.id } },
+          },
+        });
+
+        const receiverWallet = await tx.wallet.update({
+          where: { id: recipient.wallet!.id },
+          data: { balance: { increment: amount } },
+        });
+
+        const receiverTransaction = await tx.transactions.create({
+          data: {
+            amount,
+            type: "transfer",
+            wallet: { connect: { id: receiverWallet.id } },
+            user: { connect: { discordID: to.id } },
+          },
+        });
+
+        return [senderTransaction, receiverTransaction];
+      }
+    );
+    console.log(senderReceipt, receiverReceipt);
+
+    prisma.$disconnect();
+
+    return interaction.reply(
+      `You transferred ${amount} coins to ${userMention(to.id)}.`
+    );
+  } catch (error) {
+    console.error(error);
+    prisma.$disconnect();
     return interaction.reply("An error occurred.");
   }
-
-  if (user.wallet.balance < amount) {
-    return interaction.reply("You don't have enough money to transfer.");
-  }
-
-  // SENDER UPDATE
-  await prisma.wallet.update({
-    where: { id: user.wallet.id },
-    data: { balance: { decrement: amount } },
-  });
-
-  await prisma.transactions.create({
-    data: {
-      amount: -amount,
-      type: "transfer",
-      wallet: { connect: { id: user.wallet.id } },
-      user: { connect: { discordID: interaction.user.id } },
-    },
-  });
-
-  // RECIPIENT UPDATE
-  await prisma.wallet.update({
-    where: { id: recipient.wallet.id },
-    data: { balance: { increment: amount } },
-  });
-
-  await prisma.transactions.create({
-    data: {
-      amount,
-      type: "transfer",
-      wallet: { connect: { id: recipient.wallet.id } },
-      user: { connect: { discordID: to.id } },
-    },
-  });
-
-  return interaction.reply(
-    `You transferred ${amount} coins to ${userMention(to.id)}.`
-  );
 }
