@@ -3,10 +3,13 @@ import {
   channelMention,
   Collection,
   CommandInteraction,
+  Guild,
   MessageFlags,
   SlashCommandBuilder,
+  TextChannel,
   time,
   TimestampStyles,
+  userMention,
 } from 'discord.js';
 import { formatDate, paginate } from '../helper/pagination';
 import { fixedOptions } from '../typeFixes';
@@ -139,7 +142,7 @@ async function addMessageReminder(interaction: CommandInteraction) {
         time: timeDate,
       },
     });
-    console.log(reminder);
+
     prisma.$disconnect();
     return interaction.reply({
       content: `You will be reminded of "${message}" ${time(
@@ -168,7 +171,7 @@ async function addChannelReminder(interaction: CommandInteraction) {
       : new Date(Date.now() + interactionTime * 60 * 60 * 1000);
 
   try {
-    const reminder = await prisma.reminder.create({
+    await prisma.reminder.create({
       data: {
         user: {
           connect: {
@@ -180,7 +183,7 @@ async function addChannelReminder(interaction: CommandInteraction) {
         time: timeDate,
       },
     });
-    console.log(reminder);
+
     prisma.$disconnect();
     return interaction.reply({
       content: `You will be reminded in ${channel} ${time(
@@ -299,5 +302,66 @@ async function listReminder(interaction: CommandInteraction) {
       content: 'An error occurred.',
       flags: MessageFlags.Ephemeral,
     });
+  }
+}
+export async function handleReminder(guild: Guild) {
+  try {
+    const client = guild.client;
+    const reminders = await prisma.reminder.findMany({
+      where: {
+        time: {
+          lte: new Date(),
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+    if (reminders.length === 0) {
+      return;
+    }
+    for (const reminder of reminders) {
+      const user = await client.users.fetch(reminder.user.discordID);
+      if (reminder.type === 'message') {
+        if (!user) {
+          continue;
+        }
+        await user.send(
+          `Reminder: ${reminder.message} from ${time(
+            reminder.createdAt,
+            TimestampStyles.RelativeTime
+          )}`
+        );
+      } else if (reminder.type === 'channel') {
+        const channel = (await client.channels.fetch(
+          reminder.channelID!
+        )) as TextChannel;
+        if (!channel || !channel.isTextBased() || !user) {
+          continue;
+        }
+        await user.send({
+          content: `${userMention(
+            reminder.user.discordID
+          )}\nReminder from ${time(
+            reminder.createdAt,
+            TimestampStyles.RelativeTime
+          )}`,
+        });
+      }
+      await prisma.reminder.delete({
+        where: {
+          id: reminder.id,
+        },
+      });
+    }
+    prisma.$disconnect();
+  } catch (error) {
+    console.error(error);
+    prisma.$disconnect();
+    return;
+  } finally {
+    const interval = 1000 * 30;
+    const msToNextRoundedMin = interval - (Date.now() % interval);
+    setTimeout(() => handleReminder(guild), msToNextRoundedMin);
   }
 }

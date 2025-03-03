@@ -54,8 +54,6 @@ export async function paginate({
     }
   }
 
-  console.log(chunks);
-
   let currentPage = 0;
 
   const prev = new ButtonBuilder()

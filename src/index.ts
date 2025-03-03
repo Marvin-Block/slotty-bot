@@ -2,6 +2,7 @@ import { Client, Collection, Events, MessageFlags } from 'discord.js';
 // import * as fs from 'fs';
 // import * as path from 'path';
 import { commands } from './commands';
+import * as reminder from './commands/reminder';
 import { config } from './config';
 import { deployCommands } from './deploy-commands';
 import * as blacklist from './helper/blacklist';
@@ -58,6 +59,7 @@ client.on(Events.GuildAvailable, async (guild) => {
   await deployCommands({ guildId: guild.id }, client);
   blacklist.checkUsers(guild);
   userEntry.checkUsers(guild);
+  reminder.handleReminder(guild);
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
