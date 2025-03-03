@@ -1,16 +1,19 @@
 import {
   Client,
+  Collection,
   Events,
-  GatewayIntentBits,
   MessageFlags,
   TextChannel,
 } from "discord.js";
-import { commands } from "./commands";
 import { config } from "./config";
 import { deployCommands } from "./deploy-commands";
 import * as blacklist from "./helper/blacklist";
+import * as userEntry from "./helper/createUserEntry";
 import { SecureRandomGenerator } from "./secure_random_number";
 import * as saluteGambling from "./text-commands/salutegambling";
+import * as fs from "fs";
+import * as path from "path";
+import { extendedClient } from "./typeFixes";
 
 const secRand = new SecureRandomGenerator();
 
@@ -27,7 +30,27 @@ const client = new Client({
     "MessageContent",
     "GuildMembers",
   ],
-});
+}) as extendedClient;
+
+client.commands = new Collection();
+client.contextMenuCommands = new Collection();
+
+const commandsPath = path.join(__dirname, "commands");
+const commandFiles = fs
+  .readdirSync(commandsPath)
+  .filter((file) => file.endsWith(".ts"));
+for (const file of commandFiles) {
+  const filePath = path.join(commandsPath, file);
+  const command = require(filePath);
+  if ("data" in command && "execute" in command) {
+    client.commands.set(command.data.name, command);
+  } else {
+    console.log(`Command ${file} is missing data or execute function`);
+  }
+  if ("contextMenuData" in command && "contextMenuExecute" in command) {
+    client.contextMenuCommands.set(command.contextMenuData.name, command);
+  }
+}
 
 client.once(Events.ClientReady, async () => {
   console.log("Discord bot is ready! 🤖");
@@ -35,26 +58,70 @@ client.once(Events.ClientReady, async () => {
 });
 
 client.on(Events.GuildCreate, async (guild) => {
-  await deployCommands({ guildId: guild.id });
+  await deployCommands({ guildId: guild.id }, client);
 });
 
 client.on(Events.GuildAvailable, async (guild) => {
-  await deployCommands({ guildId: guild.id });
+  await deployCommands({ guildId: guild.id }, client);
   blacklist.checkUsers(guild);
+  userEntry.checkUsers(guild);
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
   blacklist.run(member);
+  userEntry.addOnJoin(member);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isCommand()) {
-    return;
-  }
+  const client = interaction.client as extendedClient;
+  if (interaction.isChatInputCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) {
+      console.error(`Command ${interaction.commandName} not found`);
+      return;
+    }
 
-  const { commandName } = interaction;
-  if (commands[commandName as keyof typeof commands]) {
-    commands[commandName as keyof typeof commands].execute(interaction);
+    try {
+      return await command.execute(interaction);
+    } catch (error) {
+      console.error(error);
+      if (interaction.replied || interaction.deferred) {
+        return await interaction.followUp({
+          content: "There was an error while executing this command!",
+          flags: MessageFlags.Ephemeral,
+        });
+      } else {
+        return await interaction.reply({
+          content: "There was an error while executing this command!",
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    }
+  } else if (interaction.isContextMenuCommand()) {
+    const command = client.contextMenuCommands.get(interaction.commandName);
+    if (!command) {
+      console.error(`Command ${interaction.commandName} not found`);
+      return;
+    }
+
+    try {
+      return await command.contextMenuExecute(interaction);
+    } catch (error) {
+      console.error(error);
+      if (interaction.replied || interaction.deferred) {
+        return await interaction.followUp({
+          content: "There was an error while executing this command!",
+          flags: MessageFlags.Ephemeral,
+        });
+      } else {
+        return await interaction.reply({
+          content: "There was an error while executing this command!",
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    }
+  } else {
+    return;
   }
 });
 

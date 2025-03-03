@@ -2,13 +2,13 @@ import {
   CommandInteraction,
   InteractionContextType,
   SlashCommandBuilder,
-} from 'discord.js';
+} from "discord.js";
 
 export const data = new SlashCommandBuilder()
-  .setName('faq')
+  .setName("faq")
   .setContexts(InteractionContextType.Guild)
   .setDescription(
-    'Sends informational text regarding some of the frequently asked questions.'
+    "Sends informational text regarding some of the frequently asked questions."
   );
 
 export async function execute(interaction: CommandInteraction) {
