@@ -4,56 +4,65 @@ import {
   Events,
   MessageFlags,
   TextChannel,
-} from "discord.js";
-import { config } from "./config";
-import { deployCommands } from "./deploy-commands";
-import * as blacklist from "./helper/blacklist";
-import * as userEntry from "./helper/createUserEntry";
-import { SecureRandomGenerator } from "./secure_random_number";
-import * as saluteGambling from "./text-commands/salutegambling";
-import * as fs from "fs";
-import * as path from "path";
-import { extendedClient } from "./typeFixes";
+} from 'discord.js';
+// import * as fs from 'fs';
+// import * as path from 'path';
+import { commands } from './commands';
+import { config } from './config';
+import { deployCommands } from './deploy-commands';
+import * as blacklist from './helper/blacklist';
+import * as userEntry from './helper/createUserEntry';
+import { SecureRandomGenerator } from './secure_random_number';
+import * as saluteGambling from './text-commands/salutegambling';
+import { extendedClient } from './typeFixes';
 
 const secRand = new SecureRandomGenerator();
 
 const client = new Client({
   intents: [
-    "GuildMessageReactions",
-    "Guilds",
-    "GuildMessages",
-    "GuildModeration",
-    "GuildExpressions",
-    "GuildPresences",
-    "GuildMessages",
-    "DirectMessages",
-    "MessageContent",
-    "GuildMembers",
+    'GuildMessageReactions',
+    'Guilds',
+    'GuildMessages',
+    'GuildModeration',
+    'GuildExpressions',
+    'GuildPresences',
+    'GuildMessages',
+    'DirectMessages',
+    'MessageContent',
+    'GuildMembers',
   ],
 }) as extendedClient;
 
 client.commands = new Collection();
 client.contextMenuCommands = new Collection();
 
-const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs
-  .readdirSync(commandsPath)
-  .filter((file) => file.endsWith(".ts"));
-for (const file of commandFiles) {
-  const filePath = path.join(commandsPath, file);
-  const command = require(filePath);
-  if ("data" in command && "execute" in command) {
-    client.commands.set(command.data.name, command);
-  } else {
-    console.log(`Command ${file} is missing data or execute function`);
-  }
-  if ("contextMenuData" in command && "contextMenuExecute" in command) {
-    client.contextMenuCommands.set(command.contextMenuData.name, command);
-  }
+// const commandsPath = path.join(__dirname, 'commands');
+// const commandFiles = fs
+//   .readdirSync(commandsPath)
+//   .filter((file) => file.endsWith('.ts'));
+
+let t: keyof typeof commands;
+
+for (t in commands) {
+  const command = commands[t];
+  client.commands.set(command.data.name, command);
 }
 
+// for (const file of commandFiles) {
+//   const filePath = path.join(commandsPath, file);
+//   const command = require(filePath);
+//   if ('data' in command && 'execute' in command) {
+//     client.commands.set(command.data.name, command);
+//   } else {
+//     console.log(`Command ${file} is missing data or execute function`);
+//   }
+//   if ('contextMenuData' in command && 'contextMenuExecute' in command) {
+//     client.contextMenuCommands.set(command.contextMenuData.name, command);
+//   }
+// }
+
 client.once(Events.ClientReady, async () => {
-  console.log("Discord bot is ready! 🤖");
+  console.log('Discord bot is ready! 🤖');
   secRand.generateCommitment();
 });
 
@@ -74,6 +83,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
   const client = interaction.client as extendedClient;
+
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
     if (!command) {
@@ -87,12 +97,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       console.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       } else {
         return await interaction.reply({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -110,12 +120,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       console.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       } else {
         return await interaction.reply({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -128,13 +138,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isModalSubmit()) return;
 
-  if (interaction.customId === "echoModal") {
-    const channelid = interaction.fields.getTextInputValue("channelid");
-    const messageid = interaction.fields.getTextInputValue("messageid");
-    const messageInput = interaction.fields.getTextInputValue("messageInput");
+  if (interaction.customId === 'echoModal') {
+    const channelid = interaction.fields.getTextInputValue('channelid');
+    const messageid = interaction.fields.getTextInputValue('messageid');
+    const messageInput = interaction.fields.getTextInputValue('messageInput');
     if (messageInput.length > 2000) {
       return interaction.reply(
-        "Message is too long, please keep it under 2000 characters"
+        'Message is too long, please keep it under 2000 characters'
       );
     }
 
@@ -151,7 +161,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         const message = await channel.messages.fetch(messageid);
         if (!message)
           return interaction.reply({
-            content: "Message not found",
+            content: 'Message not found',
             flags: MessageFlags.Ephemeral,
           });
 
@@ -160,7 +170,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } catch (e) {
       console.log(e);
       return interaction.reply({
-        content: "An error occurred",
+        content: 'An error occurred',
         flags: MessageFlags.Ephemeral,
       });
     }

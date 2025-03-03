@@ -2,8 +2,8 @@ import {
   Client,
   Collection,
   CommandInteractionOptionResolver,
-} from "discord.js";
-import { Options } from "node-html-to-image/dist/types";
+} from 'discord.js';
+import { Options } from 'node-html-to-image/dist/types';
 
 export interface fixedOptions extends CommandInteractionOptionResolver {
   options: CommandInteractionOptionResolver;

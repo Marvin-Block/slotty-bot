@@ -1,3 +1,4 @@
+import { PrismaClient } from '@prisma/client';
 import {
   CommandInteraction,
   MessageFlags,
@@ -5,69 +6,67 @@ import {
   time,
   TimestampStyles,
   userMention,
-} from "discord.js";
-import { fixedOptions } from "../typeFixes";
-import { PrismaClient } from "@prisma/client";
+} from 'discord.js';
+import { fixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("gambling")
-    .setDescription("Gambling commands.")
-    .addSubcommandGroup((group) =>
-      group
-        .setDescription("Gambling commands.")
-        .setName("wallet")
-        .addSubcommand((subcommand) =>
-          subcommand
-            .setName("balance")
-            .setDescription("Check your wallet balance.")
-        )
-        .addSubcommand((subcommand) =>
-          subcommand.setName("daily").setDescription("Claim your daily reward.")
-        )
-        .addSubcommand((subcommand) =>
-          subcommand
-            .setName("transfer")
-            .setDescription("Transfer money to another user.")
-            .addUserOption((option) =>
-              option
-                .setName("to")
-                .setDescription("The user to transfer money to.")
-                .setRequired(true)
-            )
-            .addIntegerOption((option) =>
-              option
-                .setName("amount")
-                .setDescription("The amount of money to transfer.")
-                .setRequired(true)
-                .setMinValue(1)
-                .setMaxValue(1000)
-            )
-        )
-    ),
-  async execute(interaction: CommandInteraction) {
-    const options = interaction.options as fixedOptions;
-    const subcommandGroup = options.getSubcommandGroup();
-    switch (subcommandGroup) {
-      case "wallet": {
-        const subcommand = options.getSubcommand();
-        switch (subcommand) {
-          case "balance":
-            await balance(interaction);
-            break;
-          case "daily":
-            await daily(interaction);
-            break;
-          case "transfer":
-            await transfer(interaction);
-            break;
-        }
-        break;
+export const data = new SlashCommandBuilder()
+  .setName('gambling')
+  .setDescription('Gambling commands.')
+  .addSubcommandGroup((group) =>
+    group
+      .setDescription('Gambling commands.')
+      .setName('wallet')
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName('balance')
+          .setDescription('Check your wallet balance.')
+      )
+      .addSubcommand((subcommand) =>
+        subcommand.setName('daily').setDescription('Claim your daily reward.')
+      )
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName('transfer')
+          .setDescription('Transfer money to another user.')
+          .addUserOption((option) =>
+            option
+              .setName('to')
+              .setDescription('The user to transfer money to.')
+              .setRequired(true)
+          )
+          .addIntegerOption((option) =>
+            option
+              .setName('amount')
+              .setDescription('The amount of money to transfer.')
+              .setRequired(true)
+              .setMinValue(1)
+              .setMaxValue(1000)
+          )
+      )
+  );
+
+export async function execute(interaction: CommandInteraction) {
+  const options = interaction.options as fixedOptions;
+  const subcommandGroup = options.getSubcommandGroup();
+  switch (subcommandGroup) {
+    case 'wallet': {
+      const subcommand = options.getSubcommand();
+      switch (subcommand) {
+        case 'balance':
+          await balance(interaction);
+          break;
+        case 'daily':
+          await daily(interaction);
+          break;
+        case 'transfer':
+          await transfer(interaction);
+          break;
       }
+      break;
     }
-  },
-};
+  }
+}
 
 async function balance(interaction: CommandInteraction) {
   try {
@@ -77,7 +76,7 @@ async function balance(interaction: CommandInteraction) {
     });
     if (!user || !user.wallet) {
       return interaction.reply({
-        content: "An error occurred.",
+        content: 'An error occurred.',
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -88,7 +87,7 @@ async function balance(interaction: CommandInteraction) {
   } catch (error) {
     console.error(error);
     prisma.$disconnect();
-    return interaction.reply("An error occurred.");
+    return interaction.reply('An error occurred.');
   }
 }
 
@@ -102,7 +101,7 @@ async function daily(interaction: CommandInteraction) {
     });
     if (!user || !user.wallet) {
       return interaction.reply({
-        content: "An error occurred.",
+        content: 'An error occurred.',
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -111,7 +110,7 @@ async function daily(interaction: CommandInteraction) {
 
     const lastDaily = user.transactions.find(
       (t) =>
-        t.type === "daily" && t.createdAt > new Date(Date.now() - ONE_HOUR * 20)
+        t.type === 'daily' && t.createdAt > new Date(Date.now() - ONE_HOUR * 20)
     );
 
     if (lastDaily) {
@@ -131,10 +130,10 @@ async function daily(interaction: CommandInteraction) {
         data: { balance: { increment: 100 } },
       });
 
-      tx.transactions.create({
+      await tx.transactions.create({
         data: {
           amount: 100,
-          type: "daily",
+          type: 'daily',
           wallet: { connect: { id: wallet.id } },
           user: { connect: { discordID: interaction.user.id } },
         },
@@ -143,22 +142,22 @@ async function daily(interaction: CommandInteraction) {
     prisma.$disconnect();
 
     return await interaction.reply(
-      "You claimed your daily reward of 100 coins!"
+      'You claimed your daily reward of 100 coins!'
     );
   } catch (error) {
     console.error(error);
     prisma.$disconnect();
-    return interaction.reply("An error occurred.");
+    return interaction.reply('An error occurred.');
   }
 }
 
 async function transfer(interaction: CommandInteraction) {
   const options = interaction.options as fixedOptions;
-  const to = options.getUser("to");
-  const amount = options.getInteger("amount");
+  const to = options.getUser('to');
+  const amount = options.getInteger('amount');
 
   if (!to || !amount) {
-    return interaction.reply("An error occurred.");
+    return interaction.reply('An error occurred.');
   }
 
   if (to.id === interaction.user.id) {
@@ -181,7 +180,7 @@ async function transfer(interaction: CommandInteraction) {
     });
 
     if (!user || !user.wallet || !recipient || !recipient.wallet) {
-      return interaction.reply("An error occurred.");
+      return interaction.reply('An error occurred.');
     }
 
     if (user.wallet.balance < amount) {
@@ -194,10 +193,10 @@ async function transfer(interaction: CommandInteraction) {
         data: { balance: { decrement: amount } },
       });
 
-      tx.transactions.create({
+      await tx.transactions.create({
         data: {
-          amount: -amount,
-          type: "transfer",
+          amount: amount,
+          type: 'sent transfer',
           wallet: { connect: { id: senderWallet.id } },
           user: { connect: { discordID: interaction.user.id } },
         },
@@ -208,10 +207,10 @@ async function transfer(interaction: CommandInteraction) {
         data: { balance: { increment: amount } },
       });
 
-      tx.transactions.create({
+      await tx.transactions.create({
         data: {
           amount,
-          type: "transfer",
+          type: 'received transfer',
           wallet: { connect: { id: receiverWallet.id } },
           user: { connect: { discordID: to.id } },
         },
@@ -226,6 +225,6 @@ async function transfer(interaction: CommandInteraction) {
   } catch (error) {
     console.error(error);
     prisma.$disconnect();
-    return interaction.reply("An error occurred.");
+    return interaction.reply('An error occurred.');
   }
 }

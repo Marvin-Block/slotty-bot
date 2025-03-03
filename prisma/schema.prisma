@@ -28,7 +28,7 @@ model Wallet {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   transactions Transactions[]
-  user        User           @relation(fields: [userID], references: [id]) 
+  user         User           @relation(fields: [userID], references: [id])
 }
 
 model Transactions {
@@ -36,22 +36,23 @@ model Transactions {
   userID    Int
   walletID  Int
   amount    Int      @default(0)
-  type      String   
+  type      String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  wallet    Wallet   @relation(fields: [walletID], references: [id])
-  user      User     @relation(fields: [userID], references: [id])
+
+  wallet Wallet @relation(fields: [walletID], references: [id])
+  user   User   @relation(fields: [userID], references: [id])
 }
 
 model Blacklist {
-  id            Int       @id @default(autoincrement())
-  discordID     String    @unique
-  reason        String
-  active        Int       @default(0)
-  joinAttempts  Int       @default(0)
-  updatedBy     String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           Int      @id @default(autoincrement())
+  discordID    String   @unique
+  reason       String
+  active       Int      @default(0)
+  joinAttempts Int      @default(0)
+  updatedBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Key {
