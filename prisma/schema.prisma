@@ -101,7 +101,6 @@ model Reminder {
   userID    Int
   message   String?
   channelID String?
-  type      String?
   time      DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

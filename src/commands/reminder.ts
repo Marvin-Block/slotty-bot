@@ -21,66 +21,39 @@ export const name = 'reminder';
 export const data = new SlashCommandBuilder()
   .setName(name)
   .setDescription('Set a reminder for yourself')
-  .addSubcommandGroup((group) =>
-    group
+  .addSubcommand((sub) =>
+    sub
       .setName('add')
-      .setDescription('Add a reminder')
-      .addSubcommand((subcommand) =>
-        subcommand
-          .setName('message')
-          .setDescription('Set a message reminder')
-          .addStringOption((option) =>
-            option
-              .setName('message')
-              .setDescription('The message to remind you of')
-              .setRequired(true)
-              .setMaxLength(1500)
-          )
-          .addStringOption((option) =>
-            option
-              .setName('denomination')
-              .setDescription('The denomination of time')
-              .setRequired(true)
-              .addChoices(
-                { name: 'Minutes', value: 'minutes' },
-                { name: 'Hours', value: 'hours' }
-              )
-          )
-          .addIntegerOption((option) =>
-            option
-              .setName('time')
-              .setDescription('How much time until you are reminded.')
-              .setRequired(true)
-              .setMinValue(1)
+      .setDescription('Adds a reminder')
+      .addStringOption((option) =>
+        option
+          .setName('denomination')
+          .setDescription('The denomination of time')
+          .setRequired(true)
+          .addChoices(
+            { name: 'Minutes', value: 'minutes' },
+            { name: 'Hours', value: 'hours' }
           )
       )
-      .addSubcommand((subcommand) =>
-        subcommand
+      .addIntegerOption((option) =>
+        option
+          .setName('time')
+          .setDescription('How much time until you are reminded.')
+          .setRequired(true)
+          .setMinValue(1)
+      )
+      .addStringOption((option) =>
+        option
+          .setName('message')
+          .setDescription('The message to remind you of')
+          .setRequired(true)
+          .setMaxLength(1500)
+      )
+      .addChannelOption((option) =>
+        option
           .setName('channel')
-          .setDescription('Set a channel reminder')
-          .addChannelOption((option) =>
-            option
-              .setName('channel')
-              .setDescription('The message to remind you of')
-              .setRequired(true)
-          )
-          .addStringOption((option) =>
-            option
-              .setName('denomination')
-              .setDescription('The denomination of time')
-              .setRequired(true)
-              .addChoices(
-                { name: 'Minutes', value: 'minutes' },
-                { name: 'Hours', value: 'hours' }
-              )
-          )
-          .addIntegerOption((option) =>
-            option
-              .setName('time')
-              .setDescription('How much time until you are reminded.')
-              .setRequired(true)
-              .setMinValue(1)
-          )
+          .setDescription('The channel to remind you in')
+          .setRequired(false)
       )
   )
   .addSubcommand((sub) =>
@@ -101,68 +74,24 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as fixedOptions;
-  const subcommandGroup = options.getSubcommandGroup();
   const subcommand = options.getSubcommand();
-  if (subcommandGroup === 'add') {
-    if (subcommand === 'message') {
-      return addMessageReminder(interaction);
-    } else if (subcommand === 'channel') {
-      return addChannelReminder(interaction);
-    }
+
+  switch (subcommand) {
+    case 'add':
+      return addReminder(interaction);
+    case 'remove':
+      return removeReminder(interaction);
+    case 'list':
+      return listReminder(interaction);
+    default:
+      return;
   }
-  if (subcommand === 'remove') {
-    return removeReminder(interaction);
-  }
-  if (subcommand === 'list') {
-    return listReminder(interaction);
-  }
-  return;
 }
 
-async function addMessageReminder(interaction: CommandInteraction) {
+async function addReminder(interaction: CommandInteraction) {
   const options = interaction.options as fixedOptions;
   const message = options.getString('message', true);
-  const interactionTime = options.getInteger('time', true);
-  const denomination = options.getString('denomination', true);
-  const timeDate =
-    denomination === 'minutes'
-      ? new Date(Date.now() + interactionTime * 60 * 1000)
-      : new Date(Date.now() + interactionTime * 60 * 60 * 1000);
-
-  try {
-    const reminder = await prisma.reminder.create({
-      data: {
-        user: {
-          connect: {
-            discordID: interaction.user.id,
-          },
-        },
-        message: options.getString('message', true),
-        type: 'message',
-        time: timeDate,
-      },
-    });
-
-    prisma.$disconnect();
-    return interaction.reply({
-      content: `You will be reminded of "${message}" ${time(
-        timeDate,
-        TimestampStyles.RelativeTime
-      )}`,
-      flags: MessageFlags.Ephemeral,
-    });
-  } catch (error) {
-    console.error(error);
-    prisma.$disconnect();
-    return interaction.reply({
-      content: 'An error occurred.',
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-}
-async function addChannelReminder(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
-  const channel = options.getChannel('channel', true);
+  const channel = options.getChannel('channel');
   const interactionTime = options.getInteger('time', true);
   const denomination = options.getString('denomination', true);
   const timeDate =
@@ -178,15 +107,15 @@ async function addChannelReminder(interaction: CommandInteraction) {
             discordID: interaction.user.id,
           },
         },
-        channelID: channel.id,
-        type: 'channel',
+        message: options.getString('message', true),
         time: timeDate,
+        channelID: channel?.id ?? null,
       },
     });
 
     prisma.$disconnect();
     return interaction.reply({
-      content: `You will be reminded in ${channel} ${time(
+      content: `You will be reminded of "${message}" ${time(
         timeDate,
         TimestampStyles.RelativeTime
       )}`,
@@ -262,7 +191,6 @@ async function listReminder(interaction: CommandInteraction) {
 
     const headers: Collection<string, string> = new Collection();
     headers.set('id', '- ID');
-    headers.set('type', '- Type');
     headers.set('message', '- Message');
     headers.set('channelID', '- ChannelID');
     headers.set('time', '- Time');
@@ -271,7 +199,6 @@ async function listReminder(interaction: CommandInteraction) {
     var reminderList: Collection<string, any>[] = reminders.map((reminder) => {
       const fields: Collection<string, any> = new Collection();
       fields.set('id', reminder.id);
-      fields.set('type', reminder.type);
       fields.set('message', reminder.message);
       fields.set(
         'channelID',
@@ -322,32 +249,29 @@ export async function handleReminder(guild: Guild) {
     }
     for (const reminder of reminders) {
       const user = await client.users.fetch(reminder.user.discordID);
-      if (reminder.type === 'message') {
-        if (!user) {
-          continue;
-        }
-        await user.send(
-          `Reminder: ${reminder.message} from ${time(
-            reminder.createdAt,
-            TimestampStyles.RelativeTime
-          )}`
-        );
-      } else if (reminder.type === 'channel') {
-        const channel = (await client.channels.fetch(
+      let channel;
+      if (reminder.channelID) {
+        channel = (await client.channels.fetch(
           reminder.channelID!
         )) as TextChannel;
-        if (!channel || !channel.isTextBased() || !user) {
-          continue;
-        }
-        await user.send({
-          content: `${userMention(
-            reminder.user.discordID
-          )}\nReminder from ${time(
-            reminder.createdAt,
-            TimestampStyles.RelativeTime
-          )}`,
-        });
       }
+      if (!user) {
+        continue;
+      }
+      let message = `${userMention(reminder.user.discordID)}\n`;
+      if (reminder.message) {
+        message += `Reminder: ${reminder.message}\n`;
+      }
+      if (channel) {
+        message += `In ${channelMention(channel.id)}\n`;
+      }
+      message += `from ${time(
+        reminder.createdAt,
+        TimestampStyles.RelativeTime
+      )}\n-# set at ${formatDate(reminder.createdAt)}`;
+      await user.send({
+        content: message,
+      });
       await prisma.reminder.delete({
         where: {
           id: reminder.id,
