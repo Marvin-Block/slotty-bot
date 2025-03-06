@@ -156,10 +156,15 @@ async function removeReminder(interaction: CommandInteraction) {
       },
     });
     prisma.$disconnect();
-    const content =
-      reminder.type === 'message'
-        ? `Removed reminder "${reminder.message}"`
-        : `Removed reminder in ${channelMention(reminder.channelID!)}`;
+    let content = 'Your reminder ';
+    if (reminder.message) {
+      content += `'${reminder.message}' `;
+    }
+    if (reminder.channelID) {
+      content += `${channelMention(reminder.channelID)} `;
+    }
+    content += 'has been removed.';
+
     return interaction.reply({
       content: content,
       flags: MessageFlags.Ephemeral,
