@@ -1,3 +1,9 @@
+altx  693972199727562793
+cereal  432586339263971329
+sx   846185075372720158
+muffin  322659763643088897
+alchenda 244274236338864128
+
 # ChannelId
 
 - FeatureList: 1300602325550895228
@@ -29,12 +35,13 @@
 - **Mordekaiser** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Riven** (Q, W, E, R) [Author: <@244274236338864128>]
+- **Swain** (Q, W, E, R) [Author: <@693972199727562793>]
 
 # Jungle
 
 - **Amumu** (Q, R) [Author: <@693972199727562793>]
 - **Diana** (Q, W, E, R) [Author: <@693972199727562793>]
-- **Hecarim** (Q, W, E, R) [Author: <@693972199727562793>]
+- **Hecarim** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
 
 # Mid Lane
