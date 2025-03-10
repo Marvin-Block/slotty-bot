@@ -46,7 +46,7 @@ CTRL + SPACE - Full Combo
 **K - Toggle evade**
 
 9. Can i change the hotkeys?
-Currently no.
+Yes.
 
 `;
 
