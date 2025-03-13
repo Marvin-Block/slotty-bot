@@ -1,15 +1,30 @@
 import { PrismaClient } from '@prisma/client';
 import {
   AttachmentBuilder,
+  Collection,
   CommandInteraction,
   EmbedBuilder,
+  MessageReaction,
+  ReadonlyCollection,
   SlashCommandBuilder,
+  time,
+  TimestampStyles,
+  User,
+  userMention,
 } from 'discord.js';
 import { SecureRandomGenerator } from '../secure_random_number';
 import { fixedOptions } from '../typeFixes';
 
 const prisma = new PrismaClient();
 const secRand = new SecureRandomGenerator();
+
+const gold = '<:slotted_gold:1349674918228394077>';
+const goldId = '1349674918228394077';
+const black = '<:slotted_black:1349674917007851580>';
+const blackId = '1349674917007851580';
+const red = '<:slotted_red:1349674915481260072>';
+const redId = '1349674915481260072';
+const participants = new Collection<string, string>();
 
 export const type = 'slash';
 export const name = 'roulette';
@@ -78,7 +93,7 @@ export async function execute(interaction: CommandInteraction) {
     case 'remove':
       return roulette(interaction);
     case 'list':
-      return roulette(interaction);
+      return rouletteStart(interaction);
     default:
       return;
   }
@@ -88,12 +103,14 @@ async function roulette(interaction: CommandInteraction) {
   let rng1 = await secRand.generateSecureRandom(1, 100);
   let rng2 = 0;
   let type = 'none';
+  let typeId = 'none';
   // Red - 45% chance
   if (rng1.number > 0 && rng1.number <= 45) {
     // select random variance from 1 to 24
     await secRand.generateSecureRandom(1, 24).then((rng) => {
       rng2 = rng.number;
       type = 'Red';
+      typeId = redId;
     });
   }
   // Gold - 10% chance
@@ -102,6 +119,7 @@ async function roulette(interaction: CommandInteraction) {
     await secRand.generateSecureRandom(1, 5).then((rng) => {
       rng2 = rng.number;
       type = 'Gold';
+      typeId = goldId;
     });
   }
   // Black - 45% chance
@@ -110,6 +128,7 @@ async function roulette(interaction: CommandInteraction) {
     await secRand.generateSecureRandom(1, 24).then((rng) => {
       rng2 = rng.number;
       type = 'Black';
+      typeId = blackId;
     });
   }
 
@@ -126,21 +145,117 @@ async function roulette(interaction: CommandInteraction) {
   const embed = new EmbedBuilder()
     .setTitle('Roulette')
     .setColor('#601499')
+    .setDescription('## Rolling...')
     .setImage(`attachment://Optimized-${type}-${rng2}.gif`);
 
-  interaction.editReply({
+  await interaction.editReply({
     embeds: [embed],
     files: [attachment],
   });
+
   // wait 18.63 seconds + loading buffer for gif to finish playing
   await new Promise((resolve) => setTimeout(resolve, 23_000));
+
+  const winners = participants.filter((value) => value === typeId);
+  const winnerList = winners
+    .map((value, key) => `${userMention(key)}`)
+    .join(', ');
+
+  if (winners.size === 0) {
+    const embed2 = new EmbedBuilder()
+      .setTitle('Roulette')
+      .setColor('#601499')
+      .setDescription(`No winners this round.. Better luck next time!`);
+    interaction.editReply({
+      embeds: [embed2],
+      files: [],
+    });
+    await prisma.$disconnect();
+    return;
+  }
+
   const embed2 = new EmbedBuilder()
     .setTitle('Roulette')
     .setColor('#601499')
-    .setDescription(`# You got **${type}**!\n Congratulations`);
+    .setDescription(
+      `# **${type}** won! Congratulations to: \n\n ${winnerList}`
+    );
   interaction.editReply({
     embeds: [embed2],
     files: [],
   });
   await prisma.$disconnect();
+}
+
+async function rouletteStart(interaction: CommandInteraction) {
+  const timer = 1000 * 60 * 5; // 5 minutes
+  const rouletteStart = new Date(Date.now() + timer);
+  const embed = new EmbedBuilder()
+    .setTitle('Roulette')
+    .setColor('#601499')
+    .setDescription(
+      `To start slotty roulette, please react on the color you want to bet on\n## Round will begin ${time(
+        rouletteStart,
+        TimestampStyles.RelativeTime
+      )}`
+    );
+
+  const message = await interaction.editReply({
+    embeds: [embed],
+  });
+
+  await message.react(red);
+  await message.react(gold);
+  await message.react(black);
+
+  const collector = message.createReactionCollector({
+    time: timer,
+    dispose: true,
+  });
+
+  collector.on('collect', async (reaction: MessageReaction, user: User) => {
+    if (
+      !(
+        ['slotted_red', 'slotted_gold', 'slotted_black'].includes(
+          reaction.emoji.name!
+        ) && message.author.id !== user.id
+      )
+    )
+      return;
+    const userEntry = participants.get(user.id);
+    if (!userEntry) {
+      participants.set(user.id, reaction.emoji.id!);
+    } else {
+      await message.reactions.resolve(userEntry)?.users.remove(user.id);
+      participants.delete(user.id);
+      participants.set(user.id, reaction.emoji.id!);
+      console.log(
+        `Removed reaction: ${userEntry} and added ${reaction.emoji.id}`
+      );
+    }
+  });
+  collector.on('create', async (reaction: MessageReaction, user: User) => {
+    if (message.author.id === user.id) return;
+    await reaction.remove();
+  });
+  collector.on(
+    'end',
+    (
+      collected: ReadonlyCollection<string, MessageReaction>,
+      reason: string
+    ) => {
+      console.log(` Collector ended: ${reason} - ${collected.size}`);
+      if (reason == 'time') {
+        message.reactions.removeAll();
+        roulette(interaction);
+      }
+    }
+  );
+  collector.on('remove', async (reaction: MessageReaction, user: User) => {
+    const userEntry = participants.get(user.id);
+    if (userEntry && userEntry === reaction.emoji.id) {
+      participants.delete(user.id);
+    }
+    console.log(`Removed reaction: ${userEntry}`);
+  });
 }
