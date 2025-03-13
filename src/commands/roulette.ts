@@ -188,13 +188,13 @@ async function roulette(interaction: CommandInteraction) {
 }
 
 async function rouletteStart(interaction: CommandInteraction) {
-  const timer = 1000 * 60 * 5; // 5 minutes
+  const timer = 1000 * 60 * 0.25; // 5 minutes
   const rouletteStart = new Date(Date.now() + timer);
   const embed = new EmbedBuilder()
     .setTitle('Roulette')
     .setColor('#601499')
     .setDescription(
-      `To start slotty roulette, please react on the color you want to bet on\n## Round will begin ${time(
+      `To start slotty roulette, please react on the color you want to bet on\n## Voting will end ${time(
         rouletteStart,
         TimestampStyles.RelativeTime
       )}`
@@ -246,6 +246,13 @@ async function rouletteStart(interaction: CommandInteraction) {
     ) => {
       console.log(` Collector ended: ${reason} - ${collected.size}`);
       if (reason == 'time') {
+        const embed2 = new EmbedBuilder()
+          .setTitle('Roulette')
+          .setColor('#601499')
+          .setDescription('## Voting has ended and round will start shortly!');
+        interaction.editReply({
+          embeds: [embed2],
+        });
         message.reactions.removeAll();
         roulette(interaction);
       }
