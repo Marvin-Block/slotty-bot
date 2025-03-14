@@ -25,6 +25,7 @@ const blackId = '1349674917007851580';
 const red = '<:slotted_red:1349674915481260072>';
 const redId = '1349674915481260072';
 const participants = new Collection<string, string>();
+let activeRoulette = false;
 
 export const type = 'slash';
 export const name = 'roulette';
@@ -32,55 +33,23 @@ export const data = new SlashCommandBuilder()
   .setName(name)
   .setDescription('Roulette')
   .addSubcommand((sub) =>
-    sub
-      .setName('add')
-      .setDescription('Adds a reminder')
-      .addStringOption((option) =>
-        option
-          .setName('denomination')
-          .setDescription('The denomination of time')
-          .setRequired(true)
-          .addChoices(
-            { name: 'Minutes', value: 'minutes' },
-            { name: 'Hours', value: 'hours' }
-          )
-      )
-      .addIntegerOption((option) =>
-        option
-          .setName('time')
-          .setDescription('How much time until you are reminded.')
-          .setRequired(true)
-          .setMinValue(1)
-      )
-      .addStringOption((option) =>
-        option
-          .setName('message')
-          .setDescription('The message to remind you of')
-          .setRequired(true)
-          .setMaxLength(1500)
-      )
-      .addChannelOption((option) =>
-        option
-          .setName('channel')
-          .setDescription('The channel to remind you in')
-          .setRequired(false)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('remove')
-      .setDescription('Remove a reminder')
-      .addIntegerOption((option) =>
-        option
-          .setName('id')
-          .setDescription('The id of the reminder')
-          .setRequired(true)
-          .setMinValue(1)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub.setName('list').setDescription('List all reminders')
+    sub.setName('start').setDescription('Start a round of roulette')
   );
+// .addSubcommand((sub) =>
+//   sub
+//     .setName('remove')
+//     .setDescription('Remove a reminder')
+//     .addIntegerOption((option) =>
+//       option
+//         .setName('id')
+//         .setDescription('The id of the reminder')
+//         .setRequired(true)
+//         .setMinValue(1)
+//     )
+// )
+// .addSubcommand((sub) =>
+//   sub.setName('list').setDescription('List all reminders')
+// );
 
 export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as fixedOptions;
@@ -88,11 +57,11 @@ export async function execute(interaction: CommandInteraction) {
   await interaction.deferReply();
 
   switch (subcommand) {
-    case 'add':
-      return roulette(interaction);
-    case 'remove':
-      return roulette(interaction);
-    case 'list':
+    // case 'add':
+    //   return roulette(interaction);
+    // case 'remove':
+    //   return roulette(interaction);
+    case 'start':
       return rouletteStart(interaction);
     default:
       return;
@@ -137,8 +106,10 @@ async function roulette(interaction: CommandInteraction) {
       content: 'Error generating roulette',
     });
   }
-
-  console.log(`Roulette: ${interaction.user.username} - ${type} - ${rng2}`);
+  const participantsString = participants
+    .map((value, key) => `${userMention(key)}`)
+    .join(', ');
+  console.log(`Roulette: ${participantsString} - ${type} - ${rng2}`);
 
   const file = `./assets/roulette/Optimized-${type}-${rng2}.gif`;
   const attachment = new AttachmentBuilder(file);
@@ -161,33 +132,36 @@ async function roulette(interaction: CommandInteraction) {
     .map((value, key) => `${userMention(key)}`)
     .join(', ');
 
-  if (winners.size === 0) {
-    const embed2 = new EmbedBuilder()
-      .setTitle('Roulette')
-      .setColor('#601499')
-      .setDescription(`No winners this round.. Better luck next time!`);
-    interaction.editReply({
-      embeds: [embed2],
-      files: [],
-    });
-    await prisma.$disconnect();
-    return;
-  }
+  const embed2 = new EmbedBuilder().setTitle('Roulette').setColor('#601499');
 
-  const embed2 = new EmbedBuilder()
-    .setTitle('Roulette')
-    .setColor('#601499')
-    .setDescription(
+  if (winners.size === 0) {
+    embed2.setDescription(`No winners this round.. Better luck next time!`);
+  } else {
+    embed2.setDescription(
       `# **${type}** won! Congratulations to: \n\n ${winnerList}`
     );
+  }
   interaction.editReply({
     embeds: [embed2],
     files: [],
   });
-  await prisma.$disconnect();
+  prisma.$disconnect();
+  await new Promise((resolve) => setTimeout(resolve, 10_000));
+  participants.clear();
+  activeRoulette = false;
+  interaction.deleteReply();
+  return;
 }
 
 async function rouletteStart(interaction: CommandInteraction) {
+  if (activeRoulette) {
+    interaction.editReply({
+      content: 'Roulette is already active!',
+    });
+    new Promise((resolve) => setTimeout(resolve, 15_000));
+    return;
+  }
+  activeRoulette = true;
   const timer = 1000 * 60 * 0.25; // 5 minutes
   const rouletteStart = new Date(Date.now() + timer);
   const embed = new EmbedBuilder()
@@ -204,9 +178,9 @@ async function rouletteStart(interaction: CommandInteraction) {
     embeds: [embed],
   });
 
-  await message.react(red);
-  await message.react(gold);
-  await message.react(black);
+  message.react(red);
+  message.react(gold);
+  message.react(black);
 
   const collector = message.createReactionCollector({
     time: timer,

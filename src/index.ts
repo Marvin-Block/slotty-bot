@@ -22,6 +22,7 @@ const client = new Client({
     'GuildExpressions',
     'GuildPresences',
     'GuildMessages',
+    'GuildMembers',
     'DirectMessages',
     'MessageContent',
     'GuildMembers',
