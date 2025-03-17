@@ -31,7 +31,8 @@ alchenda 244274236338864128
 
 # Top Lane
 
-- **Jayce** (Q, W, E) [Author: <@693972199727562793>]
+- **Aatrox** (Q, W, E, R) [Author: <@432586339263971329>]
+- **Jayce** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Mordekaiser** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Riven** (Q, W, E, R) [Author: <@244274236338864128>]
@@ -42,6 +43,7 @@ alchenda 244274236338864128
 - **Diana** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Hecarim** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
+- **Wukong** (Q, W, E, R) [Author: <@693972199727562793>]
 
 # Mid Lane
 
