@@ -25,7 +25,7 @@ const blackId = '1345410267890057277';
 const red = '<:red_slotted:1345410256745791519>';
 const redId = '1345410256745791519';
 const participants = new Collection<string, string>();
-const rouletteTimer = 1000 * 60 * 2;
+const rouletteTimer = 1000 * 60 * 1;
 let activeRoulette = false;
 
 export const type = 'slash';
@@ -43,10 +43,6 @@ export async function execute(interaction: CommandInteraction) {
   await interaction.deferReply();
 
   switch (subcommand) {
-    // case 'add':
-    //   return roulette(interaction);
-    // case 'remove':
-    //   return roulette(interaction);
     case 'start':
       return rouletteStart(interaction);
     default:
@@ -219,7 +215,7 @@ async function rouletteStart(interaction: CommandInteraction) {
   collector.on('collect', async (reaction: MessageReaction, user: User) => {
     if (
       !(
-        ['slotted_red', 'slotted_gold', 'slotted_black'].includes(
+        ['red_slotted', 'gold_slotted', 'black_slotted'].includes(
           reaction.emoji.name!
         ) && message.author.id !== user.id
       )

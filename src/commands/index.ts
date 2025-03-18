@@ -3,6 +3,7 @@ import * as bookmark from './bookmark';
 import * as crypto from './crypto';
 import * as echo from './echo';
 import * as faq from './faq';
+import * as federalreserve from './federalreserve';
 import * as knownissues from './knownissues';
 import * as licenseandloader from './licenseandloader';
 import * as reminder from './reminder';
@@ -25,4 +26,5 @@ export const commands = {
   gambling,
   reminder,
   roulette,
+  federalreserve,
 };
