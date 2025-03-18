@@ -276,13 +276,13 @@ async function rouletteStart(interaction: CommandInteraction) {
         });
         var voteType = '';
         switch (reaction.emoji.name) {
-          case 'slotted_red':
+          case 'red_slotted':
             voteType = 'Red';
             break;
-          case 'slotted_gold':
+          case 'gold_slotted':
             voteType = 'Gold';
             break;
-          case 'slotted_black':
+          case 'black_slotted':
             voteType = 'Black';
             break;
         }
