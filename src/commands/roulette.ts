@@ -25,7 +25,7 @@ const blackId = '1349674917007851580';
 const red = '<:slotted_red:1349674915481260072>';
 const redId = '1349674915481260072';
 const participants = new Collection<string, string>();
-const rouletteTimer = 1000 * 60 * 0.25;
+const rouletteTimer = 1000 * 60 * 2;
 let activeRoulette = false;
 
 export const type = 'slash';
@@ -55,7 +55,7 @@ export async function execute(interaction: CommandInteraction) {
 }
 
 async function roulette(interaction: CommandInteraction) {
-  let rng1 = await secRand.generateSecureRandom(46, 55);
+  let rng1 = await secRand.generateSecureRandom(1, 100);
   let rng2 = 0;
   let type = 'none';
   let typeId = 'none';
@@ -105,7 +105,7 @@ async function roulette(interaction: CommandInteraction) {
     .setDescription('## Rolling...')
     .setImage(`attachment://Optimized-${type}-${rng2}.gif`);
 
-  await interaction.editReply({
+  const rouletteMessage = await interaction.followUp({
     embeds: [embed],
     files: [attachment],
   });
@@ -127,48 +127,57 @@ async function roulette(interaction: CommandInteraction) {
       `# **${type}** won! Congratulations to: \n\n ${winnerList}\n\nYour money will be added to your wallet shortly!`
     );
   }
-  interaction.editReply({
+  rouletteMessage.edit({
     embeds: [embed2],
     files: [],
   });
   // TODO: Give winners their money
 
   const multiplier = type === 'Gold' ? 10 : 2;
-
-  await Promise.all(
-    winners.map(async (value, key) => {
-      const dbUser = await prisma.user.findFirst({
-        where: { discordID: key },
-        include: { wallet: true, transactions: true },
-      });
-      if (!dbUser || !dbUser.wallet) {
-        return interaction.followUp({
-          content: `There was an error, please contact support.`,
-          ephemeral: true,
+  try {
+    await Promise.all(
+      winners.map(async (value, key) => {
+        const dbUser = await prisma.user.findFirst({
+          where: { discordID: key },
+          include: { wallet: true, transactions: true },
         });
-      }
-      await prisma.$transaction(async (tx) => {
-        const wallet = await tx.wallet.update({
-          where: { id: dbUser.wallet!.id },
-          data: { balance: { increment: dbUser.wallet!.baseBet * multiplier } },
+        if (!dbUser || !dbUser.wallet) {
+          return interaction.followUp({
+            content: `There was an error, please contact support.`,
+            ephemeral: true,
+          });
+        }
+        await prisma.$transaction(async (tx) => {
+          const wallet = await tx.wallet.update({
+            where: { id: dbUser.wallet!.id },
+            data: {
+              balance: { increment: dbUser.wallet!.baseBet * multiplier },
+            },
+          });
+          await tx.transactions.create({
+            data: {
+              amount: dbUser.wallet!.baseBet * multiplier,
+              type: 'win roulette',
+              wallet: { connect: { id: wallet.id } },
+              user: { connect: { discordID: key } },
+            },
+          });
         });
-        await tx.transactions.create({
-          data: {
-            amount: dbUser.wallet!.baseBet * multiplier,
-            type: 'win roulette',
-            wallet: { connect: { id: wallet.id } },
-            user: { connect: { discordID: key } },
-          },
-        });
-      });
-    })
-  );
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    interaction.followUp({
+      content: `Error in transaction, please contact support.`,
+      ephemeral: true,
+    });
+  }
 
   prisma.$disconnect();
   await new Promise((resolve) => setTimeout(resolve, 10_000));
   participants.clear();
   activeRoulette = false;
-  interaction.deleteReply();
+  rouletteMessage.delete();
   return;
 }
 
@@ -188,7 +197,7 @@ async function rouletteStart(interaction: CommandInteraction) {
     .setTitle('Roulette')
     .setColor('#601499')
     .setDescription(
-      `To start slotty roulette, please react on the color you want to bet on\n## Voting will end ${time(
+      `To enter slotty roulette, please react on the color you want to bet on\n## Voting will end ${time(
         rouletteStart,
         TimestampStyles.RelativeTime
       )}`
@@ -236,7 +245,7 @@ async function rouletteStart(interaction: CommandInteraction) {
       });
       if (!dbUser || !dbUser.wallet) {
         return interaction.followUp({
-          content: `There was an error, please contact support.`,
+          content: `Cant find user or wallet, please contact support.`,
           ephemeral: true,
         });
       }
@@ -258,7 +267,7 @@ async function rouletteStart(interaction: CommandInteraction) {
           });
           await tx.transactions.create({
             data: {
-              amount: dbUser.wallet!.baseBet,
+              amount: wallet!.baseBet,
               type: 'particiapte roulette',
               wallet: { connect: { id: wallet.id } },
               user: { connect: { discordID: user.id } },
@@ -289,7 +298,7 @@ async function rouletteStart(interaction: CommandInteraction) {
       console.error(error);
       prisma.$disconnect();
       return interaction.followUp({
-        content: `There was an error, please contact support.`,
+        content: `Error in reaction collector, please contact support.`,
         ephemeral: true,
       });
     }
@@ -330,6 +339,8 @@ async function rouletteStart(interaction: CommandInteraction) {
         });
         message.reactions.removeAll();
         roulette(interaction);
+        await new Promise((resolve) => setTimeout(resolve, 5_000));
+        interaction.deleteReply();
       }
     }
   );
@@ -345,7 +356,7 @@ async function rouletteStart(interaction: CommandInteraction) {
         });
         if (!dbUser || !dbUser.wallet) {
           return interaction.followUp({
-            content: `There was an error, please contact support.`,
+            content: `Cant find user or wallet, please contact support.`,
             ephemeral: true,
           });
         }
@@ -387,7 +398,7 @@ async function rouletteStart(interaction: CommandInteraction) {
         console.error(error);
         prisma.$disconnect();
         return interaction.followUp({
-          content: `There was an error, please contact support.`,
+          content: `Error on removing vote, please contact support.`,
           ephemeral: true,
         });
       }
