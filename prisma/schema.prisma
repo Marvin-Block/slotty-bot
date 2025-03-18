@@ -26,6 +26,7 @@ model Wallet {
   balance      Int            @default(0)
   highestLoss  Int            @default(0)
   highestWin   Int            @default(0)
+  baseBet      Int            @default(50)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   transactions Transactions[]

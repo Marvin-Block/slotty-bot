@@ -25,6 +25,7 @@ const blackId = '1349674917007851580';
 const red = '<:slotted_red:1349674915481260072>';
 const redId = '1349674915481260072';
 const participants = new Collection<string, string>();
+const rouletteTimer = 1000 * 60 * 0.25;
 let activeRoulette = false;
 
 export const type = 'slash';
@@ -35,21 +36,6 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub.setName('start').setDescription('Start a round of roulette')
   );
-// .addSubcommand((sub) =>
-//   sub
-//     .setName('remove')
-//     .setDescription('Remove a reminder')
-//     .addIntegerOption((option) =>
-//       option
-//         .setName('id')
-//         .setDescription('The id of the reminder')
-//         .setRequired(true)
-//         .setMinValue(1)
-//     )
-// )
-// .addSubcommand((sub) =>
-//   sub.setName('list').setDescription('List all reminders')
-// );
 
 export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as fixedOptions;
@@ -69,7 +55,7 @@ export async function execute(interaction: CommandInteraction) {
 }
 
 async function roulette(interaction: CommandInteraction) {
-  let rng1 = await secRand.generateSecureRandom(1, 100);
+  let rng1 = await secRand.generateSecureRandom(46, 55);
   let rng2 = 0;
   let type = 'none';
   let typeId = 'none';
@@ -138,13 +124,46 @@ async function roulette(interaction: CommandInteraction) {
     embed2.setDescription(`No winners this round.. Better luck next time!`);
   } else {
     embed2.setDescription(
-      `# **${type}** won! Congratulations to: \n\n ${winnerList}`
+      `# **${type}** won! Congratulations to: \n\n ${winnerList}\n\nYour money will be added to your wallet shortly!`
     );
   }
   interaction.editReply({
     embeds: [embed2],
     files: [],
   });
+  // TODO: Give winners their money
+
+  const multiplier = type === 'Gold' ? 10 : 2;
+
+  await Promise.all(
+    winners.map(async (value, key) => {
+      const dbUser = await prisma.user.findFirst({
+        where: { discordID: key },
+        include: { wallet: true, transactions: true },
+      });
+      if (!dbUser || !dbUser.wallet) {
+        return interaction.followUp({
+          content: `There was an error, please contact support.`,
+          ephemeral: true,
+        });
+      }
+      await prisma.$transaction(async (tx) => {
+        const wallet = await tx.wallet.update({
+          where: { id: dbUser.wallet!.id },
+          data: { balance: { increment: dbUser.wallet!.baseBet * multiplier } },
+        });
+        await tx.transactions.create({
+          data: {
+            amount: dbUser.wallet!.baseBet * multiplier,
+            type: 'win roulette',
+            wallet: { connect: { id: wallet.id } },
+            user: { connect: { discordID: key } },
+          },
+        });
+      });
+    })
+  );
+
   prisma.$disconnect();
   await new Promise((resolve) => setTimeout(resolve, 10_000));
   participants.clear();
@@ -155,14 +174,15 @@ async function roulette(interaction: CommandInteraction) {
 
 async function rouletteStart(interaction: CommandInteraction) {
   if (activeRoulette) {
-    interaction.editReply({
+    interaction.followUp({
       content: 'Roulette is already active!',
+      ephemeral: true,
     });
     new Promise((resolve) => setTimeout(resolve, 15_000));
     return;
   }
   activeRoulette = true;
-  const timer = 1000 * 60 * 0.25; // 5 minutes
+  const timer = rouletteTimer;
   const rouletteStart = new Date(Date.now() + timer);
   const embed = new EmbedBuilder()
     .setTitle('Roulette')
@@ -196,16 +216,82 @@ async function rouletteStart(interaction: CommandInteraction) {
       )
     )
       return;
+    let isNewUser = false;
     const userEntry = participants.get(user.id);
     if (!userEntry) {
       participants.set(user.id, reaction.emoji.id!);
+      isNewUser = true;
     } else {
       await message.reactions.resolve(userEntry)?.users.remove(user.id);
       participants.delete(user.id);
       participants.set(user.id, reaction.emoji.id!);
       console.log(
-        `Removed reaction: ${userEntry} and added ${reaction.emoji.id}`
+        `Changed reaction from: ${userEntry} to ${reaction.emoji.id}`
       );
+    }
+    try {
+      const dbUser = await prisma.user.findFirst({
+        where: { discordID: user.id },
+        include: { wallet: true, transactions: true },
+      });
+      if (!dbUser || !dbUser.wallet) {
+        return interaction.followUp({
+          content: `There was an error, please contact support.`,
+          ephemeral: true,
+        });
+      }
+      if (dbUser.wallet.balance < dbUser.wallet.baseBet) {
+        await message.reactions
+          .resolve(reaction.emoji.id!)
+          ?.users.remove(user.id);
+        return interaction.followUp({
+          content: `${userMention(
+            user.id
+          )} does not have enough coins to play roulette!`,
+        });
+      }
+      if (isNewUser) {
+        await prisma.$transaction(async (tx) => {
+          const wallet = await tx.wallet.update({
+            where: { id: dbUser.wallet!.id },
+            data: { balance: { decrement: dbUser.wallet!.baseBet } },
+          });
+          await tx.transactions.create({
+            data: {
+              amount: dbUser.wallet!.baseBet,
+              type: 'particiapte roulette',
+              wallet: { connect: { id: wallet.id } },
+              user: { connect: { discordID: user.id } },
+            },
+          });
+        });
+        var voteType = '';
+        switch (reaction.emoji.name) {
+          case 'slotted_red':
+            voteType = 'Red';
+            break;
+          case 'slotted_gold':
+            voteType = 'Gold';
+            break;
+          case 'slotted_black':
+            voteType = 'Black';
+            break;
+        }
+        interaction.followUp({
+          content: `${userMention(user.id)} has joined roulette and bet ${
+            dbUser.wallet.baseBet
+          } coins on ${voteType}!`,
+        });
+      }
+      prisma.$disconnect();
+      return;
+    } catch (error) {
+      console.error(error);
+      prisma.$disconnect();
+      return interaction.followUp({
+        content: `There was an error, please contact support.`,
+        ephemeral: true,
+      });
     }
   });
   collector.on('create', async (reaction: MessageReaction, user: User) => {
@@ -214,11 +300,26 @@ async function rouletteStart(interaction: CommandInteraction) {
   });
   collector.on(
     'end',
-    (
+    async (
       collected: ReadonlyCollection<string, MessageReaction>,
       reason: string
     ) => {
       console.log(` Collector ended: ${reason} - ${collected.size}`);
+      if (participants.size === 0) {
+        const embed2 = new EmbedBuilder()
+          .setTitle('Roulette')
+          .setColor('#601499')
+          .setDescription('## Voting has ended and no one participated');
+        interaction.editReply({
+          embeds: [embed2],
+        });
+        message.reactions.removeAll();
+        await new Promise((resolve) => setTimeout(resolve, 10_000));
+        interaction.deleteReply();
+        activeRoulette = false;
+        participants.clear();
+        return;
+      }
       if (reason == 'time') {
         const embed2 = new EmbedBuilder()
           .setTitle('Roulette')
@@ -236,7 +337,61 @@ async function rouletteStart(interaction: CommandInteraction) {
     const userEntry = participants.get(user.id);
     if (userEntry && userEntry === reaction.emoji.id) {
       participants.delete(user.id);
+      console.log(`Removed reaction: ${userEntry}`);
+      try {
+        const dbUser = await prisma.user.findFirst({
+          where: { discordID: user.id },
+          include: { wallet: true, transactions: true },
+        });
+        if (!dbUser || !dbUser.wallet) {
+          return interaction.followUp({
+            content: `There was an error, please contact support.`,
+            ephemeral: true,
+          });
+        }
+        dbUser.transactions.toSorted(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+        );
+        const lastTransaction =
+          dbUser.transactions[dbUser.transactions.length - 1];
+        const lastTransactionDate = new Date(
+          lastTransaction.createdAt.getTime() + rouletteTimer
+        );
+
+        if (
+          lastTransactionDate > new Date() &&
+          lastTransaction.type == 'particiapte roulette'
+        ) {
+          await prisma.$transaction(async (tx) => {
+            const wallet = await tx.wallet.update({
+              where: { id: dbUser.wallet!.id },
+              data: { balance: { increment: lastTransaction.amount } },
+            });
+            await tx.transactions.create({
+              data: {
+                amount: lastTransaction.amount,
+                type: 'refund roulette',
+                wallet: { connect: { id: wallet.id } },
+                user: { connect: { discordID: user.id } },
+              },
+            });
+          });
+
+          return interaction.followUp({
+            content: `${userMention(
+              user.id
+            )} pulled out. Your money has been refunded!`,
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        prisma.$disconnect();
+        return interaction.followUp({
+          content: `There was an error, please contact support.`,
+          ephemeral: true,
+        });
+      }
     }
-    console.log(`Removed reaction: ${userEntry}`);
+    return;
   });
 }

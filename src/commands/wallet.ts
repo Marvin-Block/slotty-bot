@@ -40,6 +40,19 @@ export const data = new SlashCommandBuilder()
           .setMinValue(1)
           .setMaxValue(1000)
       )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName('basebet')
+      .setDescription('Set the amount you want to bet with.')
+      .addIntegerOption((option) =>
+        option
+          .setName('amount')
+          .setDescription('The amount of money to set as standard.')
+          .setRequired(true)
+          .setMinValue(1)
+          .setMaxValue(100000)
+      )
   );
 
 export async function execute(interaction: CommandInteraction) {
@@ -54,6 +67,9 @@ export async function execute(interaction: CommandInteraction) {
       break;
     case 'transfer':
       await transfer(interaction);
+      break;
+    case 'basebet':
+      await setBaseBet(interaction);
       break;
   }
 }
@@ -71,7 +87,7 @@ async function balance(interaction: CommandInteraction) {
       });
     }
     return await interaction.reply({
-      content: `Your balance is ${user.wallet.balance} coins.`,
+      content: `Your balance is ${user.wallet.balance} coins.\nYour base bet is ${user.wallet.baseBet} coins.`,
       flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
@@ -217,5 +233,56 @@ async function transfer(interaction: CommandInteraction) {
     console.error(error);
     prisma.$disconnect();
     return interaction.reply('An error occurred.');
+  }
+}
+
+async function setBaseBet(interaction: CommandInteraction) {
+  const options = interaction.options as fixedOptions;
+  const amount = options.getInteger('amount');
+
+  if (!amount) {
+    return interaction.reply({
+      content: 'An error occurred.',
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+  try {
+    const user = await prisma.user.findFirst({
+      where: { discordID: interaction.user.id },
+      include: { wallet: true },
+    });
+
+    if (!user || !user.wallet) {
+      return interaction.reply({
+        content: 'An error occurred.',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    if (user.wallet.balance < amount) {
+      return interaction.reply({
+        content: 'You dont have enough money to set this as your base bet.',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    await prisma.wallet.update({
+      where: { id: user.wallet.id },
+      data: { baseBet: amount },
+    });
+
+    prisma.$disconnect();
+
+    return interaction.reply({
+      content: `You set your base bet to ${amount} coins.`,
+      flags: MessageFlags.Ephemeral,
+    });
+  } catch (error) {
+    console.error(error);
+    prisma.$disconnect();
+    return interaction.reply({
+      content: 'An error occurred.',
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }
