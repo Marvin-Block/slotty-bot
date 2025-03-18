@@ -18,12 +18,12 @@ import { fixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 const secRand = new SecureRandomGenerator();
 
-const gold = '<:slotted_gold:1349674918228394077>';
-const goldId = '1349674918228394077';
-const black = '<:slotted_black:1349674917007851580>';
-const blackId = '1349674917007851580';
-const red = '<:slotted_red:1349674915481260072>';
-const redId = '1349674915481260072';
+const gold = '<:gold_slotted:1345410279277592690>';
+const goldId = '1345410279277592690';
+const black = '<:black_slotted:1345410267890057277>';
+const blackId = '1345410267890057277';
+const red = '<:red_slotted:1345410256745791519>';
+const redId = '1345410256745791519';
 const participants = new Collection<string, string>();
 const rouletteTimer = 1000 * 60 * 2;
 let activeRoulette = false;
