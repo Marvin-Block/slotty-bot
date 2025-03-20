@@ -173,7 +173,6 @@ async function roulette(interaction: CommandInteraction) {
   await new Promise((resolve) => setTimeout(resolve, 10_000));
   participants.clear();
   activeRoulette = false;
-  rouletteMessage.delete();
   return;
 }
 

@@ -24,14 +24,16 @@ alchenda 244274236338864128
 - Awareness
 - Activator
 - Prediction
-- Skin changer
 - Auto-chat
 - Target selector
+- Customizable keybinds
+- Arena support
 - **Developer SDK**
 
 # Top Lane
 
 - **Aatrox** (Q, W, E, R) [Author: <@432586339263971329>]
+- **Gwen** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Jayce** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Mordekaiser** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
@@ -75,9 +77,10 @@ alchenda 244274236338864128
 - **Miss Fortune** (Q, W, E) [Author: <@693972199727562793>, <@846185075372720158>]
 - **Nilah** (Q, R) [Author: <@693972199727562793>]
 - **Samira** (Q, W, E, R) [Author: <@693972199727562793>]
+- **Sivir** (Q, W) [Author: <@693972199727562793>]
 - **Twitch** (Q, W, E) [Author: <@693972199727562793>]
 - **Xayah** (Q, W, E) [Author: <@322659763643088897>]
-- **Zeri** (Q, W, E) [Author: <@846185075372720158>]
+- **Zeri** (Q, W, E, R) [Author: <@846185075372720158>, <@693972199727562793>]
 
 # Support
 
