@@ -38,7 +38,7 @@ export const data = new SlashCommandBuilder()
           .setDescription('The amount of money to transfer.')
           .setRequired(true)
           .setMinValue(1)
-          .setMaxValue(1000)
+          .setMaxValue(100000)
       )
   )
   .addSubcommand((subcommand) =>
