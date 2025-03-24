@@ -16,6 +16,11 @@ import {
 export const type = 'slash';
 export const name = 'echo';
 export const cutomId = 'echoModal';
+export const allowed_servers = [
+  '1074973203249770538',
+  '1300479915308613702',
+  '900017491554734080',
+];
 
 export const data = new SlashCommandBuilder()
   .setName('echo')

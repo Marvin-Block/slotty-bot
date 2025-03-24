@@ -4,11 +4,16 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import { config } from '../config';
-import { fixedOptions } from '../typeFixes';
+import { FixedOptions } from '../typeFixes';
 const options = { method: 'GET', headers: { accept: 'text/plain' } };
 
 export const type = 'slash';
 export const name = 'crypto';
+export const allowed_servers = [
+  '1074973203249770538',
+  '1300479915308613702',
+  '900017491554734080',
+];
 
 export const data = new SlashCommandBuilder()
   .setName('crypto')
@@ -27,7 +32,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('Replies with crypto wallted & prices');
 
 export async function execute(interaction: CommandInteraction) {
-  const interactionOptions = interaction.options as fixedOptions;
+  const interactionOptions = interaction.options as FixedOptions;
   const value = interactionOptions.getString('time');
 
   if (value == undefined) {

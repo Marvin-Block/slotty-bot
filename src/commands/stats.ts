@@ -11,12 +11,13 @@ import {
 } from 'discord.js';
 import * as fs from 'fs';
 import nodeHtmlToImage from 'node-html-to-image';
-import { fixedImageOptions, fixedOptions, SaluteUser } from '../typeFixes';
+import { FixedImageOptions, FixedOptions, SaluteUser } from '../typeFixes';
 
 const prisma = new PrismaClient();
 
 export const type = 'slash';
 export const name = 'stats';
+export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
 
 export const data = new SlashCommandBuilder()
   .setName('stats')
@@ -37,7 +38,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('Salute Stats');
 
 export async function execute(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
 
   await interaction.deferReply();
@@ -102,7 +103,7 @@ export async function execute(interaction: CommandInteraction) {
           mythic,
         },
       },
-    } as fixedImageOptions);
+    } as FixedImageOptions);
 
     const attachment = new AttachmentBuilder('./assets/stats.png');
 
@@ -203,7 +204,7 @@ export async function execute(interaction: CommandInteraction) {
       content: {
         users: saluteUsers,
       },
-    } as fixedImageOptions);
+    } as FixedImageOptions);
 
     const attachment = new AttachmentBuilder('./assets/top-stats.png');
 
@@ -240,7 +241,7 @@ async function statUser(
     user = (interaction as UserContextMenuCommandInteraction).targetUser;
   } else {
     user = (
-      (interaction as CommandInteraction).options as fixedOptions
+      (interaction as CommandInteraction).options as FixedOptions
     ).getUser('user');
   }
   const file = fs.readFileSync('./stats.html', 'utf-8');
@@ -305,7 +306,7 @@ async function statUser(
         mythic,
       },
     },
-  } as fixedImageOptions);
+  } as FixedImageOptions);
 
   const attachment = new AttachmentBuilder('./assets/stats.png');
 

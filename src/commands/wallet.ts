@@ -7,11 +7,13 @@ import {
   TimestampStyles,
   userMention,
 } from 'discord.js';
-import { fixedOptions } from '../typeFixes';
+import { FixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 
 export const type = 'slash';
 export const name = 'gambling';
+export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+const daily_amount = 5;
 
 export const data = new SlashCommandBuilder()
   .setName('wallet')
@@ -56,7 +58,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
   switch (subcommand) {
     case 'balance':
@@ -133,12 +135,12 @@ async function daily(interaction: CommandInteraction) {
     await prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.update({
         where: { id: user.wallet!.id },
-        data: { balance: { increment: 100 } },
+        data: { balance: { increment: daily_amount } },
       });
 
       await tx.transactions.create({
         data: {
-          amount: 100,
+          amount: daily_amount,
           type: 'daily',
           wallet: { connect: { id: wallet.id } },
           user: { connect: { discordID: interaction.user.id } },
@@ -148,7 +150,7 @@ async function daily(interaction: CommandInteraction) {
     prisma.$disconnect();
 
     return await interaction.reply({
-      content: 'You claimed your daily reward of 100 coins!',
+      content: `You claimed your daily reward of ${daily_amount} coins!`,
       flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
@@ -159,7 +161,7 @@ async function daily(interaction: CommandInteraction) {
 }
 
 async function transfer(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const to = options.getUser('to');
   const amount = options.getInteger('amount');
 
@@ -237,7 +239,7 @@ async function transfer(interaction: CommandInteraction) {
 }
 
 async function setBaseBet(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const amount = options.getInteger('amount');
 
   if (!amount) {

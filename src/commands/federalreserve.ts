@@ -4,11 +4,12 @@ import {
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
-import { fixedOptions } from '../typeFixes';
+import { FixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 
 export const type = 'slash';
 export const name = 'federalreserve';
+export const allowed_servers = [''];
 
 export const data = new SlashCommandBuilder()
   .setName('federalreserve')
@@ -29,7 +30,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
   switch (subcommand) {
     case 'print':
@@ -39,7 +40,7 @@ export async function execute(interaction: CommandInteraction) {
 }
 
 async function printMoney(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const amount = options.getInteger('amount');
 
   if (!amount) {

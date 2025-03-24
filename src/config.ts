@@ -14,6 +14,9 @@ const {
   SALT,
   DEVELOPER_ID,
   CASINO_CHANNEL_ID,
+  API_KEY,
+  PUBLIC_KEY,
+  API_BASE_URL,
 } = process.env;
 
 if (
@@ -27,7 +30,10 @@ if (
   !THREE_MONTH_PRICE ||
   !SALT ||
   !DEVELOPER_ID ||
-  !CASINO_CHANNEL_ID
+  !CASINO_CHANNEL_ID ||
+  !API_KEY ||
+  !PUBLIC_KEY ||
+  !API_BASE_URL
 ) {
   throw new Error('Missing environment variables');
 }
@@ -44,6 +50,9 @@ export const config = {
   SALT,
   DEVELOPER_ID,
   CASINO_CHANNEL_ID,
+  API_KEY,
+  PUBLIC_KEY,
+  API_BASE_URL,
 };
 
 async function loadSettings() {

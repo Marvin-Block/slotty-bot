@@ -9,7 +9,7 @@ import * as blacklist from './helper/blacklist';
 import * as userEntry from './helper/createUserEntry';
 import { SecureRandomGenerator } from './secure_random_number';
 import * as saluteGambling from './text-commands/salutegambling';
-import { extendedClient } from './typeFixes';
+import { ExtendedClient } from './typeFixes';
 
 const secRand = new SecureRandomGenerator();
 
@@ -27,7 +27,7 @@ const client = new Client({
     'MessageContent',
     'GuildMembers',
   ],
-}) as extendedClient;
+}) as ExtendedClient;
 
 client.commands = new Collection();
 client.contextMenuCommands = new Collection();
@@ -69,7 +69,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  const client = interaction.client as extendedClient;
+  const client = interaction.client as ExtendedClient;
 
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);

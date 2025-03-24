@@ -12,12 +12,18 @@ import {
   userMention,
 } from 'discord.js';
 import { formatDate, paginate } from '../helper/pagination';
-import { fixedOptions } from '../typeFixes';
+import { FixedOptions } from '../typeFixes';
 
 const prisma = new PrismaClient();
 
 export const type = 'slash';
 export const name = 'reminder';
+export const allowed_servers = [
+  '1074973203249770538',
+  '1300479915308613702',
+  '900017491554734080',
+];
+
 export const data = new SlashCommandBuilder()
   .setName(name)
   .setDescription('Set a reminder for yourself')
@@ -73,7 +79,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
 
   switch (subcommand) {
@@ -89,7 +95,7 @@ export async function execute(interaction: CommandInteraction) {
 }
 
 async function addReminder(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const message = options.getString('message', true);
   const channel = options.getChannel('channel');
   const interactionTime = options.getInteger('time', true);
@@ -131,7 +137,7 @@ async function addReminder(interaction: CommandInteraction) {
   }
 }
 async function removeReminder(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const reminderID = options.getInteger('id', true);
 
   try {

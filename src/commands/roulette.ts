@@ -13,7 +13,7 @@ import {
   userMention,
 } from 'discord.js';
 import { SecureRandomGenerator } from '../secure_random_number';
-import { fixedOptions } from '../typeFixes';
+import { FixedOptions } from '../typeFixes';
 
 const prisma = new PrismaClient();
 const secRand = new SecureRandomGenerator();
@@ -30,6 +30,8 @@ let activeRoulette = false;
 
 export const type = 'slash';
 export const name = 'roulette';
+export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+
 export const data = new SlashCommandBuilder()
   .setName(name)
   .setDescription('Roulette')
@@ -38,7 +40,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
   await interaction.deferReply();
 

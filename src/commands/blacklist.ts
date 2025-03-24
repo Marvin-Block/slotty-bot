@@ -9,12 +9,17 @@ import {
   userMention,
 } from 'discord.js';
 import { paginate } from '../helper/pagination';
-import { BlacklistRecord, fixedOptions } from '../typeFixes';
+import { BlacklistRecord, FixedOptions } from '../typeFixes';
 
 const prisma = new PrismaClient();
 
 export const type = 'slash';
 export const name = 'blacklist';
+export const allowed_servers = [
+  '1074973203249770538',
+  '1300479915308613702',
+  '900017491554734080',
+];
 
 export const data = new SlashCommandBuilder()
   .setName('blacklist')
@@ -72,7 +77,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: CommandInteraction<CacheType>) {
-  const options = interaction.options as fixedOptions;
+  const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
 
   const userid = options.getString('user');

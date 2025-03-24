@@ -7,6 +7,8 @@ import {
 export const type = 'slash';
 export const name = 'licenseandloader';
 
+export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+
 export const data = new SlashCommandBuilder()
   .setName('licenseandloader')
   .setContexts(InteractionContextType.Guild)
