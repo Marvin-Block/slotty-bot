@@ -1,8 +1,8 @@
-import { Client, Collection, REST, Routes } from 'discord.js';
-import { config } from './config';
-import { CommandCollection, ContextMenuCommandCollection } from './typeFixes';
+import { Client, Collection, REST, Routes } from "discord.js";
+import { config } from "./config";
+import { CommandCollection, ContextMenuCommandCollection } from "./typeFixes";
 
-const rest = new REST({ version: '10' }).setToken(config.DISCORD_TOKEN);
+const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
 
 type DeployCommandsProps = {
   guildId: string;
@@ -38,8 +38,7 @@ export async function deployCommands(
     }
   );
   try {
-    console.log('\nStarted applying commands.');
-
+    console.log("\nStarted applying commands.");
     await rest.put(
       Routes.applicationGuildCommands(config.DISCORD_CLIENT_ID, guildId),
       {
@@ -47,7 +46,7 @@ export async function deployCommands(
       }
     );
 
-    console.log('Successfully applied commands.');
+    console.log("Successfully applied commands.");
   } catch (error) {
     console.error(error);
   }

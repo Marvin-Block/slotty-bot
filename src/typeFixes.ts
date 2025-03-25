@@ -3,8 +3,8 @@ import {
   Collection,
   CommandInteraction,
   CommandInteractionOptionResolver,
-} from 'discord.js';
-import { Options } from 'node-html-to-image/dist/types';
+} from "discord.js";
+import { Options } from "node-html-to-image/dist/types";
 
 export interface FixedOptions extends CommandInteractionOptionResolver {
   options: CommandInteractionOptionResolver;
@@ -59,4 +59,13 @@ export interface SaluteUser {
   epic: number;
   legendary: number;
   mythic: number;
+}
+
+export interface LicenseInfo {
+  licenseString: string;
+  active: boolean;
+  valid: boolean;
+  daysLeft: number;
+  daysValid: number;
+  dateActivated: string;
 }

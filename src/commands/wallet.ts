@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import {
   CommandInteraction,
   MessageFlags,
@@ -6,38 +6,38 @@ import {
   time,
   TimestampStyles,
   userMention,
-} from 'discord.js';
-import { FixedOptions } from '../typeFixes';
+} from "discord.js";
+import { FixedOptions } from "../typeFixes";
 const prisma = new PrismaClient();
 
-export const type = 'slash';
-export const name = 'gambling';
-export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+export const type = "slash";
+export const name = "gambling";
+export const allowed_servers = ["1074973203249770538", "1300479915308613702"];
 const daily_amount = 5;
 
 export const data = new SlashCommandBuilder()
-  .setName('wallet')
-  .setDescription('Wallet commands.')
+  .setName("wallet")
+  .setDescription("Wallet commands.")
   .addSubcommand((subcommand) =>
-    subcommand.setName('balance').setDescription('Check your wallet balance.')
+    subcommand.setName("balance").setDescription("Check your wallet balance.")
   )
   .addSubcommand((subcommand) =>
-    subcommand.setName('daily').setDescription('Claim your daily reward.')
+    subcommand.setName("daily").setDescription("Claim your daily reward.")
   )
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('transfer')
-      .setDescription('Transfer money to another user.')
+      .setName("transfer")
+      .setDescription("Transfer money to another user.")
       .addUserOption((option) =>
         option
-          .setName('to')
-          .setDescription('The user to transfer money to.')
+          .setName("to")
+          .setDescription("The user to transfer money to.")
           .setRequired(true)
       )
       .addIntegerOption((option) =>
         option
-          .setName('amount')
-          .setDescription('The amount of money to transfer.')
+          .setName("amount")
+          .setDescription("The amount of money to transfer.")
           .setRequired(true)
           .setMinValue(1)
           .setMaxValue(100000)
@@ -45,12 +45,38 @@ export const data = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('basebet')
-      .setDescription('Set the amount you want to bet with.')
+      .setName("buycoins")
+      .setDescription("Buy slotted coins.")
       .addIntegerOption((option) =>
         option
-          .setName('amount')
-          .setDescription('The amount of money to set as standard.')
+          .setName("amount")
+          .setDescription("The amount of slotted coins you want to buy.")
+          .setRequired(true)
+          .setMinValue(100)
+          .setMaxValue(100000)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("sellcoins")
+      .setDescription("Sell slotted coins.")
+      .addIntegerOption((option) =>
+        option
+          .setName("amount")
+          .setDescription("The amount of slotted coins you want to buy.")
+          .setRequired(true)
+          .setMinValue(100)
+          .setMaxValue(100000)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("basebet")
+      .setDescription("Set the amount you want to bet with.")
+      .addIntegerOption((option) =>
+        option
+          .setName("amount")
+          .setDescription("The amount of money to set as standard.")
           .setRequired(true)
           .setMinValue(1)
           .setMaxValue(100000)
@@ -61,16 +87,16 @@ export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
   switch (subcommand) {
-    case 'balance':
+    case "balance":
       await balance(interaction);
       break;
-    case 'daily':
+    case "daily":
       await daily(interaction);
       break;
-    case 'transfer':
+    case "transfer":
       await transfer(interaction);
       break;
-    case 'basebet':
+    case "basebet":
       await setBaseBet(interaction);
       break;
   }
@@ -84,7 +110,7 @@ async function balance(interaction: CommandInteraction) {
     });
     if (!user || !user.wallet) {
       return interaction.reply({
-        content: 'An error occurred.',
+        content: "An error occurred.",
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -95,7 +121,7 @@ async function balance(interaction: CommandInteraction) {
   } catch (error) {
     console.error(error);
     prisma.$disconnect();
-    return interaction.reply('An error occurred.');
+    return interaction.reply("An error occurred.");
   }
 }
 
@@ -109,7 +135,7 @@ async function daily(interaction: CommandInteraction) {
     });
     if (!user || !user.wallet) {
       return interaction.reply({
-        content: 'An error occurred.',
+        content: "An error occurred.",
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -118,7 +144,7 @@ async function daily(interaction: CommandInteraction) {
 
     const lastDaily = user.transactions.find(
       (t) =>
-        t.type === 'daily' && t.createdAt > new Date(Date.now() - ONE_HOUR * 20)
+        t.type === "daily" && t.createdAt > new Date(Date.now() - ONE_HOUR * 20)
     );
 
     if (lastDaily) {
@@ -141,7 +167,7 @@ async function daily(interaction: CommandInteraction) {
       await tx.transactions.create({
         data: {
           amount: daily_amount,
-          type: 'daily',
+          type: "daily",
           wallet: { connect: { id: wallet.id } },
           user: { connect: { discordID: interaction.user.id } },
         },
@@ -156,17 +182,17 @@ async function daily(interaction: CommandInteraction) {
   } catch (error) {
     console.error(error);
     prisma.$disconnect();
-    return interaction.reply('An error occurred.');
+    return interaction.reply("An error occurred.");
   }
 }
 
 async function transfer(interaction: CommandInteraction) {
   const options = interaction.options as FixedOptions;
-  const to = options.getUser('to');
-  const amount = options.getInteger('amount');
+  const to = options.getUser("to");
+  const amount = options.getInteger("amount");
 
   if (!to || !amount) {
-    return interaction.reply('An error occurred.');
+    return interaction.reply("An error occurred.");
   }
 
   if (to.id === interaction.user.id) {
@@ -189,7 +215,7 @@ async function transfer(interaction: CommandInteraction) {
     });
 
     if (!user || !user.wallet || !recipient || !recipient.wallet) {
-      return interaction.reply('An error occurred.');
+      return interaction.reply("An error occurred.");
     }
 
     if (user.wallet.balance < amount) {
@@ -205,7 +231,7 @@ async function transfer(interaction: CommandInteraction) {
       await tx.transactions.create({
         data: {
           amount: amount,
-          type: 'sent transfer',
+          type: "sent transfer",
           wallet: { connect: { id: senderWallet.id } },
           user: { connect: { discordID: interaction.user.id } },
         },
@@ -219,7 +245,7 @@ async function transfer(interaction: CommandInteraction) {
       await tx.transactions.create({
         data: {
           amount,
-          type: 'received transfer',
+          type: "received transfer",
           wallet: { connect: { id: receiverWallet.id } },
           user: { connect: { discordID: to.id } },
         },
@@ -234,17 +260,17 @@ async function transfer(interaction: CommandInteraction) {
   } catch (error) {
     console.error(error);
     prisma.$disconnect();
-    return interaction.reply('An error occurred.');
+    return interaction.reply("An error occurred.");
   }
 }
 
 async function setBaseBet(interaction: CommandInteraction) {
   const options = interaction.options as FixedOptions;
-  const amount = options.getInteger('amount');
+  const amount = options.getInteger("amount");
 
   if (!amount) {
     return interaction.reply({
-      content: 'An error occurred.',
+      content: "An error occurred.",
       flags: MessageFlags.Ephemeral,
     });
   }
@@ -256,14 +282,14 @@ async function setBaseBet(interaction: CommandInteraction) {
 
     if (!user || !user.wallet) {
       return interaction.reply({
-        content: 'An error occurred.',
+        content: "An error occurred.",
         flags: MessageFlags.Ephemeral,
       });
     }
 
     if (user.wallet.balance < amount) {
       return interaction.reply({
-        content: 'You dont have enough money to set this as your base bet.',
+        content: "You dont have enough money to set this as your base bet.",
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -283,7 +309,7 @@ async function setBaseBet(interaction: CommandInteraction) {
     console.error(error);
     prisma.$disconnect();
     return interaction.reply({
-      content: 'An error occurred.',
+      content: "An error occurred.",
       flags: MessageFlags.Ephemeral,
     });
   }

@@ -13,6 +13,7 @@ model User {
   discordID    String         @unique
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  activeKey    String?        @unique
   keys         Key[]
   salutes      Salute[]
   wallet       Wallet?
@@ -30,7 +31,7 @@ model Wallet {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   transactions Transactions[]
-  user         User           @relation(fields: [userID], references: [id])
+  user         User           @relation(fields: [userID], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Transactions {
@@ -42,8 +43,8 @@ model Transactions {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  wallet Wallet @relation(fields: [walletID], references: [id])
-  user   User   @relation(fields: [userID], references: [id])
+  wallet Wallet @relation(fields: [walletID], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user   User   @relation(fields: [userID], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Blacklist {
@@ -59,11 +60,15 @@ model Blacklist {
 
 model Key {
   id        Int      @id @default(autoincrement())
-  key       String
+  key       String   @unique
   userID    Int
+  active    Boolean  @default(false)
+  valid     Boolean  @default(false)
+  activationDate DateTime
+  expirationDate DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userID], references: [id])
+  user      User     @relation(fields: [userID], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Salute {
@@ -73,8 +78,8 @@ model Salute {
   rarity    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  audit     Audit    @relation(fields: [auditId], references: [id])
-  user      User     @relation(fields: [userID], references: [id])
+  audit     Audit    @relation(fields: [auditId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user      User     @relation(fields: [userID], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Audit {
@@ -105,5 +110,5 @@ model Reminder {
   time      DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userID], references: [id])
+  user      User      @relation(fields: [userID], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
