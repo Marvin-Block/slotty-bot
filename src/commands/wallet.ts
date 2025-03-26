@@ -50,7 +50,9 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName('tradesubtime')
-      .setDescription('Buy slotted coins with your subtime.')
+      .setDescription(
+        'Buy slotted coins with your subtime. (1 day = 100 coins)'
+      )
       .addIntegerOption((option) =>
         option
           .setName('days')
@@ -65,7 +67,7 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName('buysubtime')
-      .setDescription('Buy subtime with slotted coins.')
+      .setDescription('Buy subtime with slotted coins. (1 day = 100 coins)')
       .addIntegerOption((option) =>
         option
           .setName('days')
