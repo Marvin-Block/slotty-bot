@@ -19,7 +19,7 @@ export const type = 'slash';
 export const name = 'license';
 export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
 
-const roleId = '1351479711368220774';
+const roleId = '1341879803254411315';
 
 export const data = new SlashCommandBuilder()
   .setName('license')

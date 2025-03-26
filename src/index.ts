@@ -62,7 +62,9 @@ client.on(Events.GuildAvailable, async (guild) => {
   blacklist.checkUsers(guild);
   userEntry.checkUsers(guild);
   reminder.handleReminder(guild);
-  license.updateLicenseInfoCron(guild);
+  if (guild.id === '1300479915308613702') {
+    license.updateLicenseInfoCron(guild);
+  }
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
