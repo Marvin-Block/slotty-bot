@@ -1,7 +1,10 @@
 import {
   CommandInteraction,
+  InteractionContextType,
   MessageFlags,
   SlashCommandBuilder,
+  time,
+  TimestampStyles,
 } from 'discord.js';
 import { config } from '../config';
 import { FixedOptions } from '../typeFixes';
@@ -17,6 +20,7 @@ export const allowed_servers = [
 
 export const data = new SlashCommandBuilder()
   .setName('crypto')
+  .setContexts(InteractionContextType.Guild)
   .setDefaultMemberPermissions(0)
   .addStringOption((option) =>
     option
@@ -70,13 +74,20 @@ export async function execute(interaction: CommandInteraction) {
   btcAmount = basePrice * btcPrice;
   ltcAmount = basePrice * ltcPrice;
 
-  var message = '';
+  const endTime = new Date();
+  endTime.setDate(endTime.getDate() + 2);
+
+  var message = ``;
   message += `To purchase with Bitcoin send:\n`;
   message += `├ BTC: \`${btcAmount.toFixed(6)}\`\n`;
   message += `└ To:  \`${config.BTC_WALLET}\`\n\n`;
   message += `To purchase with Litecoin send:\n`;
   message += `├ LTC: \`${ltcAmount.toFixed(6)}\`\n`;
-  message += `└ To:  \`${config.LTC_WALLET}\`\n`;
+  message += `└ To:  \`${config.LTC_WALLET}\`\n\n`;
+  message += `# The addresses will expire ${time(
+    endTime,
+    TimestampStyles.RelativeTime
+  )}`;
 
   return interaction.reply({ content: message });
 }

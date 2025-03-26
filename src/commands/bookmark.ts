@@ -2,6 +2,7 @@ import {
   ApplicationCommandType,
   ContextMenuCommandBuilder,
   EmbedBuilder,
+  InteractionContextType,
   MessageContextMenuCommandInteraction,
   MessageFlags,
 } from 'discord.js';
@@ -16,6 +17,7 @@ export const allowed_servers = [
 
 export const contextMenuData = new ContextMenuCommandBuilder()
   .setName('Bookmark')
+  .setContexts(InteractionContextType.Guild)
   .setType(ApplicationCommandType.Message);
 
 export async function contextMenuExecute(

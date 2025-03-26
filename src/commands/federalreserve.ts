@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import {
   CommandInteraction,
+  InteractionContextType,
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -13,6 +14,7 @@ export const allowed_servers = [''];
 
 export const data = new SlashCommandBuilder()
   .setName('federalreserve')
+  .setContexts(InteractionContextType.Guild)
   .setDescription('Federal reserve commands.')
   .setDefaultMemberPermissions(0)
   .addSubcommand((subcommand) =>

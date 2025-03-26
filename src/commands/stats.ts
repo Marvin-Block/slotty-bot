@@ -5,6 +5,7 @@ import {
   CommandInteraction,
   ContextMenuCommandBuilder,
   EmbedBuilder,
+  InteractionContextType,
   MessageFlags,
   SlashCommandBuilder,
   UserContextMenuCommandInteraction,
@@ -21,6 +22,7 @@ export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
 
 export const data = new SlashCommandBuilder()
   .setName('stats')
+  .setContexts(InteractionContextType.Guild)
   .addSubcommand((subcommand) =>
     subcommand.setName('top').setDescription('Shows the Top 10 saluters.')
   )
@@ -254,7 +256,7 @@ async function statUser(
 
   const saluteUser = await prisma.user.findFirst({
     where: { discordID: user.id },
-    include: { salutes: true },
+    include: { salutes: true, wallet: true },
   });
 
   if (!saluteUser) {

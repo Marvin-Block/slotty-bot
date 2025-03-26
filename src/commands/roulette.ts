@@ -4,6 +4,7 @@ import {
   Collection,
   CommandInteraction,
   EmbedBuilder,
+  InteractionContextType,
   MessageReaction,
   ReadonlyCollection,
   SlashCommandBuilder,
@@ -34,6 +35,7 @@ export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
 
 export const data = new SlashCommandBuilder()
   .setName(name)
+  .setContexts(InteractionContextType.Guild)
   .setDescription('Roulette')
   .addSubcommand((sub) =>
     sub.setName('start').setDescription('Start a round of roulette')
@@ -264,7 +266,7 @@ async function rouletteStart(interaction: CommandInteraction) {
           });
           await tx.transactions.create({
             data: {
-              amount: wallet!.baseBet,
+              amount: -wallet!.baseBet,
               type: 'particiapte roulette',
               wallet: { connect: { id: wallet.id } },
               user: { connect: { discordID: user.id } },

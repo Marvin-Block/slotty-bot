@@ -4,6 +4,7 @@ import {
   Collection,
   CommandInteraction,
   Guild,
+  InteractionContextType,
   MessageFlags,
   SlashCommandBuilder,
   TextChannel,
@@ -26,6 +27,7 @@ export const allowed_servers = [
 
 export const data = new SlashCommandBuilder()
   .setName(name)
+  .setContexts(InteractionContextType.Guild)
   .setDescription('Set a reminder for yourself')
   .addSubcommand((sub) =>
     sub

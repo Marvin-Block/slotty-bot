@@ -4,6 +4,7 @@ import {
   Collection,
   CommandInteraction,
   EmbedBuilder,
+  InteractionContextType,
   MessageFlags,
   SlashCommandBuilder,
   userMention,
@@ -24,6 +25,7 @@ export const allowed_servers = [
 export const data = new SlashCommandBuilder()
   .setName('blacklist')
   .setDescription('Blacklist a user from the server.')
+  .setContexts(InteractionContextType.Guild)
   .setDefaultMemberPermissions(0)
   .addSubcommand((subcommand) =>
     subcommand

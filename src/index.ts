@@ -1,31 +1,32 @@
-import { Client, Collection, Events, MessageFlags } from "discord.js";
+import { Client, Collection, Events, MessageFlags } from 'discord.js';
 // import * as fs from 'fs';
 // import * as path from 'path';
-import { commands } from "./commands";
-import * as reminder from "./commands/reminder";
-import { config } from "./config";
-import { deployCommands } from "./deploy-commands";
-import * as blacklist from "./helper/blacklist";
-import * as userEntry from "./helper/createUserEntry";
-import { SecureRandomGenerator } from "./secure_random_number";
-import * as saluteGambling from "./text-commands/salutegambling";
-import { ExtendedClient } from "./typeFixes";
+import { commands } from './commands';
+import * as license from './commands/license';
+import * as reminder from './commands/reminder';
+import { config } from './config';
+import { deployCommands } from './deploy-commands';
+import * as blacklist from './helper/blacklist';
+import * as userEntry from './helper/createUserEntry';
+import { SecureRandomGenerator } from './secure_random_number';
+import * as saluteGambling from './text-commands/salutegambling';
+import { ExtendedClient } from './typeFixes';
 
 const secRand = new SecureRandomGenerator();
 
 const client = new Client({
   intents: [
-    "GuildMessageReactions",
-    "Guilds",
-    "GuildMessages",
-    "GuildModeration",
-    "GuildExpressions",
-    "GuildPresences",
-    "GuildMessages",
-    "GuildMembers",
-    "DirectMessages",
-    "MessageContent",
-    "GuildMembers",
+    'GuildMessageReactions',
+    'Guilds',
+    'GuildMessages',
+    'GuildModeration',
+    'GuildExpressions',
+    'GuildPresences',
+    'GuildMessages',
+    'GuildMembers',
+    'DirectMessages',
+    'MessageContent',
+    'GuildMembers',
   ],
 }) as ExtendedClient;
 
@@ -36,19 +37,19 @@ client.modalCommands = new Collection();
 let t: keyof typeof commands;
 for (t in commands) {
   const command = commands[t];
-  if (command.type === "slash") {
+  if (command.type === 'slash') {
     client.commands.set(command.data.name, command);
   }
-  if (command.type == "contextMenu" || command.name === "stats") {
+  if (command.type == 'contextMenu' || command.name === 'stats') {
     client.contextMenuCommands.set(command.contextMenuData.name, command);
   }
-  if (command.name === "echo") {
+  if (command.name === 'echo') {
     client.modalCommands.set(command.cutomId, command);
   }
 }
 
 client.once(Events.ClientReady, async () => {
-  console.log("Discord bot is ready! 🤖");
+  console.log('Discord bot is ready! 🤖');
   secRand.generateCommitment();
 });
 
@@ -61,6 +62,7 @@ client.on(Events.GuildAvailable, async (guild) => {
   blacklist.checkUsers(guild);
   userEntry.checkUsers(guild);
   reminder.handleReminder(guild);
+  license.updateLicenseInfoCron(guild);
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
@@ -84,12 +86,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       console.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       } else {
         return await interaction.reply({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -107,12 +109,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       console.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       } else {
         return await interaction.reply({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -129,12 +131,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       console.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       } else {
         return await interaction.reply({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           flags: MessageFlags.Ephemeral,
         });
       }

@@ -1,8 +1,8 @@
-import { Client, Collection, REST, Routes } from "discord.js";
-import { config } from "./config";
-import { CommandCollection, ContextMenuCommandCollection } from "./typeFixes";
+import { Client, Collection, REST, Routes } from 'discord.js';
+import { config } from './config';
+import { CommandCollection, ContextMenuCommandCollection } from './typeFixes';
 
-const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
+const rest = new REST({ version: '10' }).setToken(config.DISCORD_TOKEN);
 
 type DeployCommandsProps = {
   guildId: string;
@@ -19,7 +19,16 @@ export async function deployCommands(
   const commandsData = client.commands.map((command: CommandCollection) => {
     if (command.allowed_servers) {
       if (command.allowed_servers.includes(guildId)) {
-        console.log(`- ${command.data.name}`);
+        console.log(`\n${command.data.name}`);
+        if (command.data.options.length > 0) {
+          for (let i = 0; i < command.data.options.length; i++) {
+            if (i === command.data.options.length - 1) {
+              console.log(` └ ${command.data.options[i].name}`);
+              break;
+            }
+            console.log(` ├ ${command.data.options[i].name}`);
+          }
+        }
         return command.data;
       }
     }
@@ -38,7 +47,7 @@ export async function deployCommands(
     }
   );
   try {
-    console.log("\nStarted applying commands.");
+    console.log('\nStarted applying commands.');
     await rest.put(
       Routes.applicationGuildCommands(config.DISCORD_CLIENT_ID, guildId),
       {
@@ -46,7 +55,7 @@ export async function deployCommands(
       }
     );
 
-    console.log("Successfully applied commands.");
+    console.log('Successfully applied commands.');
   } catch (error) {
     console.error(error);
   }

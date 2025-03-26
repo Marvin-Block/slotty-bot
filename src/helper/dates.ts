@@ -70,3 +70,12 @@ export function diffText(date1: Date, date2: Date): string {
     return `${minutes} minutes and ${remainingSeconds} seconds`;
   }
 }
+
+export function getLicenseEndDate(
+  dateActivated: string,
+  daysValid: number
+): Date {
+  const licenseEndDate = new Date(dateActivated);
+  licenseEndDate.setDate(licenseEndDate.getDate() + daysValid);
+  return licenseEndDate;
+}
