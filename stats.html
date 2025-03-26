@@ -84,10 +84,26 @@
                      <div class="row-span-1 row-start-3 text-5xl text-white">
                         {{user.nickname}}
                      </div>
-					 <div class="row-span-1 row-start-4 text-xl text-gray-600">
+					      <div class="row-span-1 row-start-4 text-xl text-gray-600">
                         {{user.username}}
                      </div>
-                     <div class="row-span-7 row-start-6">
+                     <div class="row-span-1, row-start-5">
+                        <div class="grid grid-cols-12 gap-y-8">
+                           <div class="col-span-6">
+                              <div class="text-gray-200 text-4xl">
+                                 {{user.slottedCoins}}
+                              </div>
+                              <div class="text-gray-400 text-2xl">Slotted coins</div>
+                           </div>
+                           <div class="col-span-6">
+                              <div class="text-gray-200 text-4xl">
+                                 {{user.subTime}}
+                              </div>
+                              <div class="text-gray-400 text-2xl">Subcription Time</div>
+                           </div>
+                        </div>
+                     </div>
+                     <div class="row-span-7 row-start-7">
                         <div class="grid grid-cols-12 gap-y-8">
                            <div class="col-span-4">
                               <div class="text-gray-200 text-4xl">{{user.mythic}}</div>

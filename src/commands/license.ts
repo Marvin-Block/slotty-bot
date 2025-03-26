@@ -301,6 +301,8 @@ async function getLicenseInfo(interaction: CommandInteraction) {
         data: { activeKey: useableKey.key },
       });
       console.log('User %s has been updated', interaction.user.id);
+      await giveRole(interaction.guild!, interaction.user.id);
+      console.log('Role has been added to user %s', interaction.user.id);
     }
 
     let activeKey = user.keys.find((key) => key.key === user.activeKey);
@@ -392,7 +394,7 @@ async function updateLicenseInfo(guild: Guild) {
     for (const k of key) {
       const license = await fetchLicenseInfo(k.key);
       if (license === null) {
-        console.log(`${k.key} is not a valid key`);
+        console.error('API error with %s', k.key);
         continue;
       }
 
@@ -455,24 +457,38 @@ async function updateLicenseInfo(guild: Guild) {
     }
 
     const users = await prisma.user.findMany({
-      where: { activeKey: { not: null } },
+      include: { keys: true },
     });
 
-    if (users.length < 1) {
-      console.log('No users with invalid active keys found');
-      await prisma.$disconnect();
-      return true;
-    } else {
-      for (const u of users) {
+    for (const u of users) {
+      const useableKey = u.keys.find(
+        (key) => key.active && key.valid && key.expirationDate > new Date()
+      );
+
+      if (!u.activeKey && useableKey) {
+        console.log('User %s has a useable key but no active key', u.discordID);
+        await prisma.user.update({
+          where: { id: u.id },
+          data: { activeKey: useableKey.key },
+        });
+        console.log('User %s has been updated', u.discordID);
+        await giveRole(guild, u.discordID);
+        console.log('Role has been added to user %s', u.discordID);
+        continue;
+      }
+
+      const hasKey = u.keys.find((k) => k.key === u.activeKey);
+      if (u.activeKey && !hasKey) {
+        console.log(
+          `User ${u.discordID} has been updated to remove the invalid active key`
+        );
         await prisma.user.update({
           where: { discordID: u.discordID },
           data: { activeKey: null },
         });
-        console.log(
-          `User ${u.discordID} has been updated to remove the invalid active key`
-        );
         await removeRole(guild, u.discordID);
         console.log(`Role hase been removed since the key is no longer active`);
+        continue;
       }
     }
 

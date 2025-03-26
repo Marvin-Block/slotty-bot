@@ -12,6 +12,7 @@ import {
 } from 'discord.js';
 import * as fs from 'fs';
 import nodeHtmlToImage from 'node-html-to-image';
+import { diffDays, diffText } from '../helper/dates';
 import { FixedImageOptions, FixedOptions, SaluteUser } from '../typeFixes';
 
 const prisma = new PrismaClient();
@@ -55,11 +56,38 @@ export async function execute(interaction: CommandInteraction) {
 
     const saluteUser = await prisma.user.findFirst({
       where: { discordID: user.id },
-      include: { salutes: true },
+      include: { salutes: true, wallet: true },
     });
 
     if (!saluteUser) {
       return interaction.editReply('No salutes found.');
+    }
+
+    let subTime = 'None';
+    let slottedCoins = 0;
+    let highestWin = 0;
+    let highestLoss = 0;
+
+    if (saluteUser.activeKey) {
+      const key = await prisma.key.findFirst({
+        where: { key: saluteUser.activeKey },
+      });
+      if (key) {
+        const days = parseInt(
+          diffDays(key.expirationDate, new Date()).toFixed(0)
+        );
+        if (days > 500) {
+          subTime = 'Lifetime';
+        } else {
+          subTime = diffText(key.expirationDate, new Date());
+        }
+      }
+    }
+
+    if (saluteUser.wallet) {
+      slottedCoins = saluteUser.wallet.balance;
+      highestWin = saluteUser.wallet.highestWin;
+      highestLoss = saluteUser.wallet.highestLoss;
     }
 
     const normal = saluteUser.salutes.filter((s) => s.rarity === 0).length;
@@ -103,6 +131,10 @@ export async function execute(interaction: CommandInteraction) {
           epic,
           legendary,
           mythic,
+          subTime,
+          slottedCoins,
+          highestWin,
+          highestLoss,
         },
       },
     } as FixedImageOptions);
@@ -124,7 +156,7 @@ export async function execute(interaction: CommandInteraction) {
     const file = fs.readFileSync('./top-stats.html', 'utf-8');
 
     const users = await prisma.user.findMany({
-      include: { salutes: true },
+      include: { salutes: true, wallet: true },
     });
 
     const groupedUsers = users.map((user) => [user.discordID, user.salutes]);
@@ -139,6 +171,7 @@ export async function execute(interaction: CommandInteraction) {
         userID: number;
         rarity: number;
       }[];
+
       const normal = saluteList!.filter((s) => s.rarity === 0).length;
       const rare = saluteList!.filter((s) => s.rarity === 1).length;
       const epic = saluteList!.filter((s) => s.rarity === 2).length;
@@ -156,7 +189,9 @@ export async function execute(interaction: CommandInteraction) {
         epic,
         legendary,
         mythic,
-      };
+        slottedCoins: 0,
+        subTime: 'None',
+      } as SaluteUser;
     });
 
     const topUsers = saluteUsers
@@ -187,6 +222,28 @@ export async function execute(interaction: CommandInteraction) {
         extension: 'png',
         size: 4096,
       });
+      const dbUser = await prisma.user.findFirst({
+        where: { discordID: u.discordID },
+        include: { wallet: true },
+      });
+      if (dbUser && dbUser.wallet) {
+        u.slottedCoins = dbUser.wallet.balance;
+        if (dbUser.activeKey) {
+          const key = await prisma.key.findFirst({
+            where: { key: dbUser.activeKey },
+          });
+          if (key) {
+            const days = parseInt(
+              diffDays(key.expirationDate, new Date()).toFixed(0)
+            );
+            if (days > 500) {
+              u.subTime = 'Lifetime';
+            } else {
+              u.subTime = diffText(key.expirationDate, new Date());
+            }
+          }
+        }
+      }
     });
 
     await nodeHtmlToImage({
@@ -265,6 +322,29 @@ async function statUser(
     });
   }
 
+  let subTime = 'None';
+  let slottedCoins = 0;
+
+  if (saluteUser.activeKey) {
+    const key = await prisma.key.findFirst({
+      where: { key: saluteUser.activeKey },
+    });
+    if (key) {
+      const days = parseInt(
+        diffDays(key.expirationDate, new Date()).toFixed(0)
+      );
+      if (days > 500) {
+        subTime = 'Lifetime';
+      } else {
+        subTime = diffText(key.expirationDate, new Date());
+      }
+    }
+  }
+
+  if (saluteUser.wallet) {
+    slottedCoins = saluteUser.wallet.balance;
+  }
+
   const normal = saluteUser.salutes.filter((s) => s.rarity === 0).length;
   const rare = saluteUser.salutes.filter((s) => s.rarity === 1).length;
   const epic = saluteUser.salutes.filter((s) => s.rarity === 2).length;
@@ -306,6 +386,8 @@ async function statUser(
         epic,
         legendary,
         mythic,
+        subTime,
+        slottedCoins,
       },
     },
   } as FixedImageOptions);

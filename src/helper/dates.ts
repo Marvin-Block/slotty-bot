@@ -40,34 +40,44 @@ export function diffText(date1: Date, date2: Date): string {
 
   if (years > 0) {
     const remainingMonths = months % 12;
+    const yearText = years === 1 ? 'year' : 'years';
+    const monthText = remainingMonths === 1 ? 'month' : 'months';
     if (remainingMonths === 0) {
-      return `${years} years`;
+      return `${years} ${yearText}`;
     }
-    return `${years} years and ${remainingMonths} months`;
+    return `${years} ${yearText} and ${remainingMonths} ${monthText}`;
   } else if (months > 0) {
     const remainingDays = days % 30;
+    const monthText = months === 1 ? 'month' : 'months';
+    const dayText = remainingDays === 1 ? 'day' : 'days';
     if (remainingDays === 0) {
-      return `${months} months`;
+      return `${months} ${monthText}`;
     }
-    return `${months} months and ${remainingDays} days`;
+    return `${months} ${monthText} and ${remainingDays} ${dayText}`;
   } else if (days > 0) {
     const remainingHours = hours % 24;
+    const dayText = days === 1 ? 'day' : 'days';
+    const hourText = remainingHours === 1 ? 'hour' : 'hours';
     if (remainingHours === 0) {
-      return `${days} days`;
+      return `${days} ${dayText}`;
     }
-    return `${days} days and ${remainingHours} hours`;
+    return `${days} ${dayText} and ${remainingHours} ${hourText}`;
   } else if (hours > 0) {
     const remainingMinutes = minutes % 60;
+    const hourText = hours === 1 ? 'hour' : 'hours';
+    const minuteText = remainingMinutes === 1 ? 'minute' : 'minutes';
     if (remainingMinutes === 0) {
-      return `${hours} hours`;
+      return `${hours} ${hourText}`;
     }
-    return `${hours} hours and ${remainingMinutes} minutes`;
+    return `${hours} ${hourText} and ${remainingMinutes} ${minuteText}`;
   } else {
     const remainingSeconds = seconds % 60;
+    const minuteText = minutes === 1 ? 'minute' : 'minutes';
+    const secondText = remainingSeconds === 1 ? 'second' : 'seconds';
     if (remainingSeconds === 0) {
-      return `${minutes} minutes`;
+      return `${minutes} ${minuteText}`;
     }
-    return `${minutes} minutes and ${remainingSeconds} seconds`;
+    return `${minutes} ${minuteText} and ${remainingSeconds} ${secondText}`;
   }
 }
 

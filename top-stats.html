@@ -37,49 +37,84 @@
 	<body>
 		<div class="background">
 			<div class="px-[16px] py-[8px]">
-				<div class="inline-block min-w-full py-2 align-middle px-6 px-8">
+				<div class="inline-block min-w-full py-2 align-middle px-2">
 					<!-- Custom "table" -->
-					<div class="w-full grid grid-cols-1 gap-4">
+					<div class="w-full grid grid-cols-1 divide-y divide-gray-200/20 bg-glass rounded-md">
+						<!-- Header -->
+						<div class="grid grid-cols-21 divide-x divide-gray-200/20">
+							<div class="col-span-1 flex flex-col items-center justify-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Nr</div>
+							</div>
+							<div class="col-span-4 py-5 px-3 text-sm whitespace-nowrap">
+								<div class="flex flex-col items-center text-center">
+									<div class="text-gray-200">User</div>
+								</div>
+							</div>
+							<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Subtime</div>
+							</div>
+							<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Coins</div>
+							</div>
+							<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Total</div>
+							</div>
+							<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Normal</div>
+							</div>
+							<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Rare</div>
+							</div>
+							<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Epic</div>
+							</div>
+							<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Legendary</div>
+							</div>
+							<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
+								<div class="text-gray-200">Mythic</div>
+							</div>
+						</div>
 						{{#each users}}
-							<div class="grid grid-cols-17 bg-glass rounded-md divide-x divide-gray-200/20">
-								<div class="col-span-1 flex flex-col items-center justify-center px-3 py-5 text-sm whitespace-nowrap text-center">
+							<div class="grid grid-cols-21 divide-x divide-gray-200/20">
+								<div class="col-span-1 flex flex-col items-center justify-center px-1 py-5 text-sm whitespace-nowrap text-center justify-center">
 									<div class="text-gray-200">{{this.place}}</div>
 								</div>
-								<div class="col-span-4 py-5 px-3 text-sm whitespace-nowrap">
-									<div class="flex items-center">
+								<div class="col-span-4 flex flex-col items-center pl-5 py-1 text-sm whitespace-nowrap justify-center">
+									<div class="flex items-center justify-center">
 										<!-- AVATAR -->
 										<div class="size-11 shrink-0">
 											<img class="size-11 rounded-full" src="{{this.avatarUrl}}" alt="">
 										</div>
 										<!-- NAME -->
 										<div class="ml-4 w-[10rem]">
-											<div class="font-medium text-gray-200 overflow-hidden text-ellipsis">{{this.nickname}}</div>
+											<div class="font-medium mt-1 text-gray-200 overflow-hidden text-ellipsis">{{this.nickname}}</div>
 										</div>
 									</div>
 								</div>
-								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
-									<div class="text-gray-200">Total</div>
-									<div class="mt-1 text-gray-300">{{total}}</div>
+								<div class="col-span-2 flex flex-col items-center py-1 text-sm whitespace-nowrap text-center justify-center">
+									<div class="text-gray-300">{{subTime}}</div>
 								</div>
-								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
-									<div class="text-gray-200">Normal</div>
-									<div class="mt-1 text-gray-300">{{normal}}</div>
+								<div class="col-span-2 flex flex-col items-center py-1 text-sm whitespace-nowrap text-center justify-center">
+									<div class="text-gray-300">{{slottedCoins}}</div>
 								</div>
-								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
-									<div class="text-gray-200">Rare</div>
-									<div class="mt-1 text-gray-300">{{rare}}</div>
+								<div class="col-span-2 flex flex-col items-center py-1 text-sm whitespace-nowrap text-center justify-center">
+									<div class="text-gray-300">{{total}}</div>
 								</div>
-								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
-									<div class="text-gray-200">Epic</div>
-									<div class="mt-1 text-gray-300">{{epic}}</div>
+								<div class="col-span-2 flex flex-col items-center py-1 text-sm whitespace-nowrap text-center justify-center">
+									<div class="text-gray-300">{{normal}}</div>
 								</div>
-								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
-									<div class="text-gray-200">Legendary</div>
-									<div class="mt-1 text-gray-300">{{legendary}}</div>
+								<div class="col-span-2 flex flex-col items-center py-1 text-sm whitespace-nowrap text-center justify-center">
+									<div class="text-gray-300">{{rare}}</div>
 								</div>
-								<div class="col-span-2 flex flex-col items-center px-3 py-5 text-sm whitespace-nowrap text-center">
-									<div class="text-gray-200">Mythic</div>
-									<div class="mt-1 text-gray-300">{{mythic}}</div>
+								<div class="col-span-2 flex flex-col items-center py-1 text-sm whitespace-nowrap text-center justify-center">
+									<div class="text-gray-300">{{epic}}</div>
+								</div>
+								<div class="col-span-2 flex flex-col items-center py-1 text-sm whitespace-nowrap text-center justify-center">
+									<div class="text-gray-300">{{legendary}}</div>
+								</div>
+								<div class="col-span-2 flex flex-col items-center py-1 text-sm whitespace-nowrap text-center justify-center">
+									<div class="text-gray-300">{{mythic}}</div>
 								</div>
 							</div>
 						{{/each}}
