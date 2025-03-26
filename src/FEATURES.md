@@ -44,6 +44,7 @@ alchenda 244274236338864128
 - **Amumu** (Q, R) [Author: <@693972199727562793>]
 - **Diana** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Hecarim** (Q, W, E, R) [Author: <@432586339263971329>]
+- **Master Yi** (Q, W, E) [Author: <@244274236338864128>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Wukong** (Q, W, E, R) [Author: <@693972199727562793>]
 
@@ -56,6 +57,7 @@ alchenda 244274236338864128
 - **Kassadin** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Lux** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Orianna** (Q, W, E, R) [Author: <@322659763643088897>]
+- **Sylas** (Q, W, E) [Author: <@432586339263971329>]
 - **Swain** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Syndra** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Veigar** (Q, W, E, R) [Author: <@432586339263971329>]
