@@ -7,6 +7,7 @@ import {
   TimestampStyles,
 } from 'discord.js';
 import { config } from '../config';
+import { logger } from '../helper/logger';
 import { FixedOptions } from '../typeFixes';
 const options = { method: 'GET', headers: { accept: 'text/plain' } };
 
@@ -56,13 +57,13 @@ export async function execute(interaction: CommandInteraction) {
   await fetch('https://api.coingate.com/api/v2/rates/merchant/GBP/BTC', options)
     .then((res) => res.json())
     .then((res) => (btcPrice = res))
-    .catch((err) => console.error(err));
+    .catch((err) => logger.error(err, 'Error fetching BTC price'));
 
   // fetch LTC price
   await fetch('https://api.coingate.com/api/v2/rates/merchant/GBP/LTC', options)
     .then((res) => res.json())
     .then((res) => (ltcPrice = res))
-    .catch((err) => console.error(err));
+    .catch((err) => logger.error(err, 'Error fetching LTC price'));
 
   if (btcPrice == -1 || ltcPrice == -1) {
     return interaction.reply({

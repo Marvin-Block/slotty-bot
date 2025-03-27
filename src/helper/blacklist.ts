@@ -1,5 +1,6 @@
-import { PrismaClient } from "@prisma/client";
-import { Guild, GuildMember } from "discord.js";
+import { PrismaClient } from '@prisma/client';
+import { Guild, GuildMember } from 'discord.js';
+import { logger } from './logger';
 
 const prisma = new PrismaClient();
 const FIVE_MIN = 1000 * 60 * 5;
@@ -21,14 +22,14 @@ export async function run(member: GuildMember) {
           joinAttempts: blacklistRecord.joinAttempts + 1,
         },
       });
-      console.log(`Blacklisted user ${member.user.username} found. Kicking...`);
+      logger.info(`Blacklisted user ${member.user.username} found. Kicking...`);
       await member.kick();
     } else {
-      console.log(`User ${member.user.username} not blacklisted.`);
+      logger.info(`User ${member.user.username} not blacklisted.`);
     }
     await prisma.$disconnect();
   } catch (e) {
-    console.error(e);
+    logger.error(e, 'Error while checking user');
     await prisma.$disconnect();
   }
 }
@@ -47,14 +48,14 @@ export async function checkUsers(guild: Guild) {
       }
       const member = guildMembers.get(blacklistRecord.discordID);
       if (member) {
-        console.log(
+        logger.info(
           `Blacklisted user ${member.user.username} found. Kicking...`
         );
         await member.kick();
       }
     }
   } catch (e) {
-    console.error(e);
+    logger.error(e, 'Error while checking users');
     await prisma.$disconnect();
   }
 

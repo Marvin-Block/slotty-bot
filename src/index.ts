@@ -8,11 +8,14 @@ import { config } from './config';
 import { deployCommands } from './deploy-commands';
 import * as blacklist from './helper/blacklist';
 import * as userEntry from './helper/createUserEntry';
+import { logger } from './helper/logger';
 import { SecureRandomGenerator } from './secure_random_number';
 import * as saluteGambling from './text-commands/salutegambling';
 import { ExtendedClient } from './typeFixes';
 
 const secRand = new SecureRandomGenerator();
+
+const licenseAllowedGuilds = ['1074973203249770538', '1300479915308613702'];
 
 const client = new Client({
   intents: [
@@ -49,7 +52,7 @@ for (t in commands) {
 }
 
 client.once(Events.ClientReady, async () => {
-  console.log('Discord bot is ready! 🤖');
+  logger.info('Discord bot is ready! 🤖');
   secRand.generateCommitment();
 });
 
@@ -62,7 +65,7 @@ client.on(Events.GuildAvailable, async (guild) => {
   blacklist.checkUsers(guild);
   userEntry.checkUsers(guild);
   reminder.handleReminder(guild);
-  if (guild.id === '1300479915308613702') {
+  if (licenseAllowedGuilds.includes(guild.id)) {
     license.updateLicenseInfoCron(guild);
   }
 });
@@ -78,14 +81,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
     if (!command) {
-      console.error(`Command ${interaction.commandName} not found`);
+      logger.error(`Command ${interaction.commandName} not found`);
       return;
     }
 
     try {
       return await command.execute(interaction);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
           content: 'There was an error while executing this command!',
@@ -101,14 +104,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
   } else if (interaction.isContextMenuCommand()) {
     const command = client.contextMenuCommands.get(interaction.commandName);
     if (!command) {
-      console.error(`Command ${interaction.commandName} not found`);
+      logger.error(`Command ${interaction.commandName} not found`);
       return;
     }
 
     try {
       return await command.contextMenuExecute(interaction);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
           content: 'There was an error while executing this command!',
@@ -124,13 +127,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
   } else if (interaction.isModalSubmit()) {
     const command = client.modalCommands.get(interaction.customId);
     if (!command) {
-      console.error(`Command ${interaction.customId} not found`);
+      logger.error(`Command ${interaction.customId} not found`);
       return;
     }
     try {
       return await command.handleModal(interaction);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
           content: 'There was an error while executing this command!',

@@ -1,8 +1,9 @@
-import axios from "axios";
-import bigInt from "big-integer";
-import { randomBytes, createHash } from "crypto";
-import { PrismaClient } from "@prisma/client";
-import { asyncSettings } from "./config";
+import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
+import bigInt from 'big-integer';
+import { createHash, randomBytes } from 'crypto';
+import { asyncSettings } from './config';
+import { logger } from './helper/logger';
 const prisma = new PrismaClient();
 
 interface DrandResponse {
@@ -38,8 +39,8 @@ export interface RandomResult {
 export class SecureRandomGenerator {
   private currentCommitment!: string | null;
   private commitmentSalt!: Buffer | null;
-  private readonly PRIME_2048 = bigInt("2").pow(2048).subtract(1);
-  private readonly RSW_SETUP_BASE = bigInt("2");
+  private readonly PRIME_2048 = bigInt('2').pow(2048).subtract(1);
+  private readonly RSW_SETUP_BASE = bigInt('2');
 
   constructor(
     currentCommitment: string | null = null,
@@ -81,9 +82,9 @@ export class SecureRandomGenerator {
       this.commitmentSalt,
       Buffer.from(timestamp),
     ]);
-    this.currentCommitment = createHash("sha256")
+    this.currentCommitment = createHash('sha256')
       .update(commitmentData)
-      .digest("hex");
+      .digest('hex');
 
     return this.currentCommitment;
   }
@@ -91,7 +92,7 @@ export class SecureRandomGenerator {
   // Wesolowski's VDF
   private vdf(input: Buffer | string, iterations: number): string {
     let x = bigInt(
-      Buffer.isBuffer(input) ? input.toString("hex") : input,
+      Buffer.isBuffer(input) ? input.toString('hex') : input,
       16
     ).mod(this.PRIME_2048);
 
@@ -108,7 +109,7 @@ export class SecureRandomGenerator {
       iterations: iterations,
     };
 
-    return createHash("sha256").update(JSON.stringify(result)).digest("hex");
+    return createHash('sha256').update(JSON.stringify(result)).digest('hex');
   }
 
   private gatherSystemEntropy(): Buffer {
@@ -119,7 +120,7 @@ export class SecureRandomGenerator {
     const memEntropy = process.memoryUsage().heapUsed.toString();
     const timestampEntropy = Date.now().toString();
 
-    return createHash("sha256")
+    return createHash('sha256')
       .update(
         cpuUserEntropy +
           cpuSystemEntropy +
@@ -134,14 +135,14 @@ export class SecureRandomGenerator {
     try {
       // Distributed randomness
       const current = await axios.get<DrandResponse>(
-        "https://api.drand.sh/public/latest"
+        'https://api.drand.sh/public/latest'
       );
       const previous = await axios.get<DrandResponse>(
         `https://api.drand.sh/public/${current.data.round - 1}`
       );
 
       if (current.data.round !== previous.data.round + 1) {
-        throw new Error("Drand chain inconsistency detected");
+        throw new Error('Drand chain inconsistency detected');
       }
 
       const hardwareEntropy = randomBytes(32); // replace with actual hardware entropy in best case xd
@@ -156,7 +157,7 @@ export class SecureRandomGenerator {
     } catch (error) {
       throw new Error(
         `Entropy gathering failed: ${
-          error instanceof Error ? error.message : "Unknown error"
+          error instanceof Error ? error.message : 'Unknown error'
         }`
       );
     }
@@ -168,7 +169,7 @@ export class SecureRandomGenerator {
   ): Promise<RandomResult> {
     try {
       if (!this.commitmentSalt) {
-        throw new Error("No commitment generated. Call generateCommitment().");
+        throw new Error('No commitment generated. Call generateCommitment().');
       }
 
       const entropy = await this.gatherEntropy();
@@ -184,8 +185,8 @@ export class SecureRandomGenerator {
       };
 
       const combinedEntropy = Buffer.concat([
-        Buffer.from(entropy.drandCurrent.randomness, "hex"),
-        Buffer.from(entropy.drandPrevious.randomness, "hex"),
+        Buffer.from(entropy.drandCurrent.randomness, 'hex'),
+        Buffer.from(entropy.drandPrevious.randomness, 'hex'),
         entropy.hardware,
         entropy.system,
         this.commitmentSalt,
@@ -200,7 +201,7 @@ export class SecureRandomGenerator {
         (BigInt(1) << BigInt(64)) - ((BigInt(1) << BigInt(64)) % range);
       let randomValue: bigint;
       do {
-        const hash = createHash("sha256").update(vdfResult).digest();
+        const hash = createHash('sha256').update(vdfResult).digest();
         randomValue = hash.readBigUInt64BE(0);
       } while (randomValue >= maxValue);
 
@@ -218,7 +219,7 @@ export class SecureRandomGenerator {
     } catch (error) {
       throw new Error(
         `Secure random generation failed: ${
-          error instanceof Error ? error.message : "Unknown error"
+          error instanceof Error ? error.message : 'Unknown error'
         }`
       );
     }
@@ -231,20 +232,16 @@ export class SecureRandomGenerator {
         data: {
           drandRoundsCurrent: record.drandRounds.current,
           drandRoundsPrevious: record.drandRounds.previous,
-          commitment: record.commitment ?? "",
+          commitment: record.commitment ?? '',
           result: record.result ?? -1,
-          vdfHash: record.vdfHash ?? "",
+          vdfHash: record.vdfHash ?? '',
         },
       });
-      console.log(`Stored audit record with ID ${result.id}`);
+      logger.info(`Stored audit record with ID ${result.id}`);
       await prisma.$disconnect();
       return result.id;
     } catch (error) {
-      console.error(
-        `Failed to store audit record: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      logger.error(error, 'Failed to store audit record');
       await prisma.$disconnect();
       return -1;
     }

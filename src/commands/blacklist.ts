@@ -9,6 +9,7 @@ import {
   SlashCommandBuilder,
   userMention,
 } from 'discord.js';
+import { logger } from '../helper/logger';
 import { paginate } from '../helper/pagination';
 import { BlacklistRecord, FixedOptions } from '../typeFixes';
 
@@ -85,10 +86,15 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
   const userid = options.getString('user');
   const reason = options.getString('reason');
 
+  logger.info(
+    `Executing command ${interaction.commandName} with subcommand ${subcommand}`
+  );
+
   switch (subcommand) {
     case 'list':
       let users: BlacklistRecord[] | undefined = await listUsers();
       if (!users) {
+        logger.error('Couldnt find any blacklisted users');
         return interaction.reply({
           content: 'An error occured',
           flags: MessageFlags.Ephemeral,
@@ -130,6 +136,7 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
       break;
     case 'show':
       if (!userid) {
+        logger.error('Interaction option userid not found');
         return interaction.reply({
           content: 'Invalid command usage',
           flags: MessageFlags.Ephemeral,
@@ -138,6 +145,7 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
       let user: BlacklistRecord | undefined = await showUser(userid);
 
       if (!user) {
+        logger.error('Couldnt find blacklisted user');
         return interaction.reply({
           content: 'An error occured',
           flags: MessageFlags.Ephemeral,
@@ -168,6 +176,7 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
     case 'add':
     case 'remove':
       if (!userid || !reason) {
+        logger.error('Interaction option userid or reason not found');
         return interaction.reply({
           content: 'Invalid command usage',
           flags: MessageFlags.Ephemeral,
@@ -182,6 +191,7 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
       }
 
       if (!result) {
+        logger.error('Error while executing command');
         return interaction.reply({
           content: 'An error occured',
           flags: MessageFlags.Ephemeral,
@@ -189,8 +199,8 @@ export async function execute(interaction: CommandInteraction<CacheType>) {
       }
 
       if (result.active === 1) {
-        await interaction.guild?.members.kick(userid).catch(console.error);
-        console.log(`Kicked user ${userid}`);
+        await interaction.guild?.members.kick(userid).catch(logger.error);
+        logger.info(`Kicked user ${userid}`);
       }
 
       return interaction.reply({
@@ -225,13 +235,11 @@ async function addUser(
         active: 1,
       },
     });
-    console.log(
-      `Blacklisted user ${result.discordID} with reason ${result.reason}`
-    );
+    logger.info(`Adding user ${userid} to blacklist with reason ${reason}`);
     await prisma.$disconnect();
     return result;
   } catch (e) {
-    console.log(e);
+    logger.error(e, 'Error while adding user to blacklist');
     await prisma.$disconnect();
     return undefined;
   }
@@ -252,13 +260,13 @@ async function removeUser(
         updatedBy: interaction.user.id,
       },
     });
-    console.log(
+    logger.info(
       `Removed blacklisted user ${result.discordID} with reason ${result.reason}`
     );
     await prisma.$disconnect();
     return result;
   } catch (e) {
-    console.log(e);
+    logger.error(e, 'Error while removing user from blacklist');
     await prisma.$disconnect();
     return undefined;
   }
@@ -270,13 +278,13 @@ async function showUser(userid: string) {
         discordID: userid,
       },
     });
-    console.log(
+    logger.info(
       `Showing blacklisted user ${result?.discordID} with reason ${result?.reason}`
     );
     await prisma.$disconnect();
     return result ?? undefined;
   } catch (e) {
-    console.log(e);
+    logger.error(e, 'Error while showing user');
     await prisma.$disconnect();
     return undefined;
   }
@@ -286,11 +294,11 @@ async function listUsers() {
     const result: BlacklistRecord[] = await prisma.blacklist.findMany({
       orderBy: { createdAt: 'desc' },
     });
-    console.log(`Listing ${result.length} blacklisted users`);
+    logger.info(`Listing ${result.length} blacklisted users`);
     await prisma.$disconnect();
     return result;
   } catch (e) {
-    console.log(e);
+    logger.error(e, 'Error while listing blacklisted users');
     await prisma.$disconnect();
     return undefined;
   }

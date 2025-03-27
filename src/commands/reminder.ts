@@ -12,6 +12,7 @@ import {
   TimestampStyles,
   userMention,
 } from 'discord.js';
+import { logger } from '../helper/logger';
 import { formatDate, paginate } from '../helper/pagination';
 import { FixedOptions } from '../typeFixes';
 
@@ -130,7 +131,7 @@ async function addReminder(interaction: CommandInteraction) {
       flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error creating reminder');
     prisma.$disconnect();
     return interaction.reply({
       content: 'An error occurred.',
@@ -178,7 +179,7 @@ async function removeReminder(interaction: CommandInteraction) {
       flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error removing reminder');
     prisma.$disconnect();
     return interaction.reply({
       content: 'An error occurred.',
@@ -236,7 +237,7 @@ async function listReminder(interaction: CommandInteraction) {
     prisma.$disconnect();
     return;
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error listing reminders');
     prisma.$disconnect();
     return interaction.reply({
       content: 'An error occurred.',
@@ -293,7 +294,7 @@ export async function handleReminder(guild: Guild) {
     }
     prisma.$disconnect();
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error handling reminders');
     prisma.$disconnect();
     return;
   } finally {

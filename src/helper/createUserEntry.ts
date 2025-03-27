@@ -1,5 +1,6 @@
-import { PrismaClient } from "@prisma/client";
-import { Guild, GuildMember } from "discord.js";
+import { PrismaClient } from '@prisma/client';
+import { Guild, GuildMember } from 'discord.js';
+import { logger } from './logger';
 
 const prisma = new PrismaClient();
 
@@ -17,7 +18,7 @@ export async function addOnJoin(member: GuildMember) {
     });
     await prisma.$disconnect();
   } catch (e) {
-    console.error(e);
+    logger.error(e, 'Error while creating user entry');
     await prisma.$disconnect();
   }
 }
@@ -42,7 +43,7 @@ export async function checkUsers(guild: Guild) {
     });
     await prisma.$disconnect();
   } catch (e) {
-    console.error(e);
+    logger.error(e, 'Error while checking users');
     await prisma.$disconnect();
   }
 }

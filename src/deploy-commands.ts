@@ -1,5 +1,6 @@
 import { Client, Collection, REST, Routes } from 'discord.js';
 import { config } from './config';
+import { logger } from './helper/logger';
 import { CommandCollection, ContextMenuCommandCollection } from './typeFixes';
 
 const rest = new REST({ version: '10' }).setToken(config.DISCORD_TOKEN);
@@ -15,18 +16,18 @@ export async function deployCommands(
     contextMenuCommands: Collection<string, any>;
   }
 ) {
-  console.log(`Deploying commands to guild ${guildId}`);
+  logger.info(`Collecting commands for guild ${guildId}`);
   const commandsData = client.commands.map((command: CommandCollection) => {
     if (command.allowed_servers) {
       if (command.allowed_servers.includes(guildId)) {
-        console.log(`\n${command.data.name}`);
+        logger.info(`- ${command.data.name}`);
         if (command.data.options.length > 0) {
           for (let i = 0; i < command.data.options.length; i++) {
             if (i === command.data.options.length - 1) {
-              console.log(` └ ${command.data.options[i].name}`);
+              logger.info(`  └ ${command.data.options[i].name}`);
               break;
             }
-            console.log(` ├ ${command.data.options[i].name}`);
+            logger.info(`  ├ ${command.data.options[i].name}`);
           }
         }
         return command.data;
@@ -34,20 +35,20 @@ export async function deployCommands(
     }
     return null;
   });
-
-  console.log(`\nDeploying context menu commands to guild ${guildId}`);
+  logger.info(`Collecting context menu commands for guild ${guildId}`);
   const contextMenuData = client.contextMenuCommands.map(
     (command: ContextMenuCommandCollection) => {
       if (command.allowed_servers) {
         if (command.allowed_servers.includes(guildId)) {
-          console.log(`- ${command.contextMenuData.name}`);
+          logger.info(`- ${command.contextMenuData.name}`);
           return command.contextMenuData;
         }
       }
+      return null;
     }
   );
   try {
-    console.log('\nStarted applying commands.');
+    logger.info('Started applying commands.');
     await rest.put(
       Routes.applicationGuildCommands(config.DISCORD_CLIENT_ID, guildId),
       {
@@ -55,8 +56,8 @@ export async function deployCommands(
       }
     );
 
-    console.log('Successfully applied commands.');
+    logger.info('Successfully applied commands.');
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error deploying commands:');
   }
 }

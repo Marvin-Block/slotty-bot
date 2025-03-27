@@ -6,6 +6,7 @@ import {
   User,
 } from 'discord.js';
 import { asyncSettings, config } from '../config';
+import { logger } from '../helper/logger';
 import { AuditRecord, SecureRandomGenerator } from '../secure_random_number';
 
 const prisma = new PrismaClient();
@@ -34,9 +35,9 @@ export async function run(
       const time1 = lastSalute?.createdAt;
       const time2 = new Date();
       const diff = Math.abs(time2.getTime() - time1!.getTime());
-      console.log(diff, lastSalute?.id);
+      logger.info(`${diff} - ${lastSalute?.id}`);
       if (diff < settings.cooldown) {
-        console.log('Cooldown limiting');
+        logger.info('Cooldown limiting');
         return;
       }
     }
@@ -193,7 +194,7 @@ async function addToDB(
           },
         },
       });
-      console.log(`Added Salute for ${result.discordID} with rarity ${pull}`);
+      logger.info(`Added Salute for ${result.discordID} with rarity ${pull}`);
     } else {
       const result = await prisma.user.update({
         where: { discordID: discordUser.id },
@@ -210,12 +211,12 @@ async function addToDB(
           },
         },
       });
-      console.log(`Added Salute for ${result.discordID} with rarity ${pull}`);
+      logger.info(`Added Salute for ${result.discordID} with rarity ${pull}`);
     }
     await prisma.$disconnect();
     return true;
   } catch (e) {
-    console.error(e);
+    logger.error(e, 'Error while adding salute to database');
     await prisma.$disconnect();
     return false;
   }

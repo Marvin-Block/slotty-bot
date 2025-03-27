@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { logger } from '../src/helper/logger';
 const prisma = new PrismaClient();
 async function main() {
   const delay = await prisma.settings.upsert({
@@ -35,14 +36,14 @@ async function main() {
     },
   });
 
-  console.log({ delay, vdfIterations, cooldown, cooldownEnabled });
+  logger.info({ delay, vdfIterations, cooldown, cooldownEnabled });
 }
 main()
   .then(async () => {
     await prisma.$disconnect();
   })
   .catch(async (e) => {
-    console.error(e);
+    logger.error(e, 'Error while seeding database');
     await prisma.$disconnect();
     process.exit(1);
   });

@@ -5,6 +5,7 @@ import {
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
+import { logger } from '../helper/logger';
 import { FixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 
@@ -86,7 +87,7 @@ async function printMoney(interaction: CommandInteraction) {
       flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error while printing money');
     prisma.$disconnect();
     return interaction.reply({
       content: 'An error occurred.',

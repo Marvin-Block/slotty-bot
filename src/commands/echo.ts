@@ -12,6 +12,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
+import { logger } from '../helper/logger';
 
 export const type = 'slash';
 export const name = 'echo';
@@ -108,7 +109,7 @@ export async function handleModal(
       return message.edit(messageInput);
     }
   } catch (e) {
-    console.log(e);
+    logger.error(e, 'Error while sending message');
     return interaction.reply({
       content: 'An error occurred',
       flags: MessageFlags.Ephemeral,

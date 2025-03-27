@@ -9,7 +9,8 @@ import {
   userMention,
 } from 'discord.js';
 import { editLicense, fetchLicenseInfo } from '../helper/api';
-import { diffText, getLicenseEndDate } from '../helper/dates';
+import { diffText } from '../helper/dates';
+import { logger } from '../helper/logger';
 import { FixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 
@@ -49,7 +50,7 @@ export const data = new SlashCommandBuilder()
   // )
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('tradesubtime')
+      .setName('buycoins')
       .setDescription(
         'Buy slotted coins with your subtime. (1 day = 100 coins)'
       )
@@ -106,8 +107,8 @@ export async function execute(interaction: CommandInteraction) {
     case 'basebet':
       await setBaseBet(interaction);
       break;
-    case 'tradesubtime':
-      await tradeSubtime(interaction);
+    case 'buycoins':
+      await buycoins(interaction);
       break;
     case 'buysubtime':
       await buySubtime(interaction);
@@ -117,29 +118,34 @@ export async function execute(interaction: CommandInteraction) {
 
 async function balance(interaction: CommandInteraction) {
   try {
+    logger.info(`Fetching balance for user: ${interaction.user.id}`);
     const user = await prisma.user.findFirst({
       where: { discordID: interaction.user.id },
       include: { wallet: true },
     });
     if (!user || !user.wallet) {
+      logger.error('User or wallet not found');
       return interaction.reply({
         content: 'An error occurred.',
         flags: MessageFlags.Ephemeral,
       });
     }
+    await prisma.$disconnect();
+    logger.info('User found, fetching balance');
     return await interaction.reply({
       content: `Your balance is ${user.wallet.balance} coins.\nYour base bet is ${user.wallet.baseBet} coins.`,
       flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
-    console.error(error);
-    prisma.$disconnect();
+    logger.error(error, 'Error fetching user balance');
+    await prisma.$disconnect();
     return interaction.reply('An error occurred.');
   }
 }
 
 async function daily(interaction: CommandInteraction) {
   try {
+    logger.info(`Fetching daily reward for user: ${interaction.user.id}`);
     const user = await prisma.user.upsert({
       where: { discordID: interaction.user.id },
       update: {},
@@ -147,6 +153,7 @@ async function daily(interaction: CommandInteraction) {
       include: { wallet: true, transactions: true },
     });
     if (!user || !user.wallet) {
+      logger.error('User or wallet not found');
       return interaction.reply({
         content: 'An error occurred.',
         flags: MessageFlags.Ephemeral,
@@ -161,6 +168,7 @@ async function daily(interaction: CommandInteraction) {
     );
 
     if (lastDaily) {
+      logger.info('User already claimed daily reward');
       const date = new Date(lastDaily.createdAt.getTime() + ONE_HOUR * 20);
       return interaction.reply({
         content: `You can claim your daily reward in ${time(
@@ -186,15 +194,15 @@ async function daily(interaction: CommandInteraction) {
         },
       });
     });
-    prisma.$disconnect();
-
+    await prisma.$disconnect();
+    logger.info('User claimed daily reward, adding %d coins to wallet');
     return await interaction.reply({
       content: `You claimed your daily reward of ${daily_amount} coins!`,
       flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
-    console.error(error);
-    prisma.$disconnect();
+    logger.error(error, 'Error claiming daily reward');
+    await prisma.$disconnect();
     return interaction.reply('An error occurred.');
   }
 }
@@ -271,7 +279,7 @@ async function transfer(interaction: CommandInteraction) {
       `You transferred ${amount} coins to ${userMention(to.id)}.`
     );
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error transferring money');
     prisma.$disconnect();
     return interaction.reply('An error occurred.');
   }
@@ -282,11 +290,15 @@ async function setBaseBet(interaction: CommandInteraction) {
   const amount = options.getInteger('amount');
 
   if (!amount) {
+    logger.error('Interaction option amount not found');
     return interaction.reply({
       content: 'An error occurred.',
       flags: MessageFlags.Ephemeral,
     });
   }
+  logger.info(
+    `Setting base bet for user: ${interaction.user.id} with amount ${amount}`
+  );
   try {
     const user = await prisma.user.findFirst({
       where: { discordID: interaction.user.id },
@@ -294,6 +306,7 @@ async function setBaseBet(interaction: CommandInteraction) {
     });
 
     if (!user || !user.wallet) {
+      logger.error('User or wallet not found');
       return interaction.reply({
         content: 'An error occurred.',
         flags: MessageFlags.Ephemeral,
@@ -301,6 +314,7 @@ async function setBaseBet(interaction: CommandInteraction) {
     }
 
     if (user.wallet.balance < amount) {
+      logger.error('User does not have enough money to set base bet');
       return interaction.reply({
         content: 'You dont have enough money to set this as your base bet.',
         flags: MessageFlags.Ephemeral,
@@ -312,15 +326,15 @@ async function setBaseBet(interaction: CommandInteraction) {
       data: { baseBet: amount },
     });
 
-    prisma.$disconnect();
-
+    await prisma.$disconnect();
+    logger.info('Base bet set successfully');
     return interaction.reply({
       content: `You set your base bet to ${amount} coins.`,
       flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
-    console.error(error);
-    prisma.$disconnect();
+    logger.error(error, 'Error setting base bet');
+    await prisma.$disconnect();
     return interaction.reply({
       content: 'An error occurred.',
       flags: MessageFlags.Ephemeral,
@@ -328,14 +342,14 @@ async function setBaseBet(interaction: CommandInteraction) {
   }
 }
 
-async function tradeSubtime(interaction: CommandInteraction) {
+async function buycoins(interaction: CommandInteraction) {
   await interaction.deferReply({
     flags: MessageFlags.Ephemeral,
   });
   const options = interaction.options as FixedOptions;
   const days = options.getInteger('days');
   if (!days) {
-    console.error('Interaction option days not found');
+    logger.error('Interaction option days not found');
     await prisma.$disconnect();
     return interaction.editReply({
       content: 'An error occurred, please contact the support.',
@@ -343,10 +357,8 @@ async function tradeSubtime(interaction: CommandInteraction) {
   }
   const coins = days * 100;
 
-  console.log(
-    `Attempting to trade ${days} days of subtime for %d coins for user: %s`,
-    coins,
-    interaction.user.id
+  logger.info(
+    `Attempting to trade ${days} days of subtime for ${coins} coins for user: ${interaction.user.id}`
   );
 
   try {
@@ -355,14 +367,14 @@ async function tradeSubtime(interaction: CommandInteraction) {
       include: { wallet: true, keys: true },
     });
     if (!user || !user.wallet) {
-      console.error('User or wallet not found');
+      logger.error('User or wallet not found');
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'An error occured, please contact the support.',
       });
     }
     if (!user.activeKey) {
-      console.error('User does not have an active license');
+      logger.error('User does not have an active license');
       await prisma.$disconnect();
       return interaction.editReply({
         content:
@@ -372,21 +384,21 @@ async function tradeSubtime(interaction: CommandInteraction) {
     // Check if user has enough sub time
     const licenseInfo = await fetchLicenseInfo(user.activeKey);
     if (!licenseInfo) {
-      console.error('API error with %s', user.activeKey);
+      logger.error(`API error with ${user.activeKey}`);
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'An error occured, please contact the support.',
       });
     }
     if (!licenseInfo.valid) {
-      console.error('%s is no longer valid', user.activeKey);
+      logger.error(`${user.activeKey} is no longer valid`);
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'The license key linked to your account no longer valid.',
       });
     }
     if (!licenseInfo.active) {
-      console.error('%s is no longer active', user.activeKey);
+      logger.error(`${user.activeKey} is no longer active`);
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'The license key linked to your account no longer active.',
@@ -394,34 +406,39 @@ async function tradeSubtime(interaction: CommandInteraction) {
     }
 
     if (licenseInfo.daysLeft < days || licenseInfo.daysLeft < 1) {
-      console.error(
-        'User does not have enough sub time to trade %d days',
-        days
-      );
+      logger.error(`User does not have enough sub time to trade ${days} days`);
       await prisma.$disconnect();
       return interaction.editReply(
         `You dont have enough sub time to buy ${days} days worth of coins.`
       );
     }
-    console.log('Attempting to remove %d days from %s', days, user.activeKey);
+    logger.info(`Attempting to remove ${days} days from ${user.activeKey}`);
     const success = await editLicense(user.activeKey, -days);
 
     if (!success) {
-      console.error('Failed to edit license');
+      logger.error('Failed to edit license');
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'An error occured, please contact the support.',
       });
     }
-    console.log(
-      'License edited successfully, adding coins to user wallet: %d',
-      coins
+    logger.info(
+      `License edited successfully, adding coins to user wallet: ${coins}`
     );
-    const newLicenseEndDate = getLicenseEndDate(
-      licenseInfo.dateActivated,
-      licenseInfo.daysLeft - days
+    const newLicense = await fetchLicenseInfo(user.activeKey);
+    if (!newLicense) {
+      logger.error(`API error with ${user.activeKey}`);
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: 'An error occured, please contact the support.',
+      });
+    }
+    const newLicenseEndDate = new Date(newLicense.dateActivated);
+    newLicenseEndDate.setDate(
+      newLicenseEndDate.getDate() + newLicense.daysLeft
     );
-    console.log('New license end date: %s', newLicenseEndDate);
+
+    logger.info(`New license end date: ${newLicenseEndDate}`);
 
     await prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.update({
@@ -445,16 +462,16 @@ async function tradeSubtime(interaction: CommandInteraction) {
         },
       });
     });
-    console.log('Transaction completed successfully');
+    logger.info('Transaction completed successfully');
     await prisma.$disconnect();
     return interaction.editReply({
-      content: `You traded ${days} days of your subtime for ${coins} coins.\nYour remaining subtime is ${diffText(
+      content: `You traded ${days} days of your subtime for ${coins} coins.\nYour license key will expire in ${diffText(
         newLicenseEndDate,
         new Date()
       )}.`,
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error trading subtime for coins');
     prisma.$disconnect();
     return interaction.editReply(
       'An error occured, please contact the support.'
@@ -470,7 +487,7 @@ async function buySubtime(interaction: CommandInteraction) {
   const days = options.getInteger('days');
 
   if (!days) {
-    console.error('Interaction option days not found');
+    logger.error('Interaction option days not found');
     return interaction.editReply({
       content: 'An error occurred, please contact the support.',
     });
@@ -478,11 +495,8 @@ async function buySubtime(interaction: CommandInteraction) {
 
   const coins = days * 100;
 
-  console.log(
-    `Attempting to buy %d days of subtime for %d coins for user: %s`,
-    days,
-    coins,
-    interaction.user.id
+  logger.info(
+    `Attempting to buy ${days} days of subtime for ${coins} coins for user ${interaction.user.id}`
   );
 
   try {
@@ -491,14 +505,14 @@ async function buySubtime(interaction: CommandInteraction) {
       include: { wallet: true, keys: true },
     });
     if (!user || !user.wallet) {
-      console.error('User or wallet not found');
+      logger.error('User or wallet not found');
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'An error occured, please contact the support.',
       });
     }
     if (!user.activeKey) {
-      console.error('User does not have an active license');
+      logger.error('User does not have an active license');
       await prisma.$disconnect();
       return interaction.editReply({
         content:
@@ -507,9 +521,8 @@ async function buySubtime(interaction: CommandInteraction) {
     }
     // Check if user has enough coins
     if (user.wallet.balance < coins) {
-      console.error(
-        'User does not have enough coins to buy %d days of subtime',
-        days
+      logger.error(
+        `User does not have enough coins to buy ${days} days of subtime`
       );
       await prisma.$disconnect();
       return interaction.editReply({
@@ -519,21 +532,21 @@ async function buySubtime(interaction: CommandInteraction) {
     // check if license is active & valid
     const licenseInfo = await fetchLicenseInfo(user.activeKey);
     if (!licenseInfo) {
-      console.error('API error with %s', user.activeKey);
+      logger.error(`API error with ${user.activeKey}`);
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'An error occured, please contact the support.',
       });
     }
     if (!licenseInfo.valid) {
-      console.error('%s is no longer valid', user.activeKey);
+      logger.error(`${user.activeKey} is no longer valid`);
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'The license key linked to your account no longer valid.',
       });
     }
     if (!licenseInfo.active) {
-      console.error('%s is no longer active', user.activeKey);
+      logger.error(`${user.activeKey} is no longer active`);
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'The license key linked to your account no longer active.',
@@ -543,22 +556,32 @@ async function buySubtime(interaction: CommandInteraction) {
     const success = await editLicense(user.activeKey, days);
 
     if (!success) {
-      console.error('Failed to edit license');
+      logger.error('Failed to edit license');
       await prisma.$disconnect();
       return interaction.editReply({
         content: 'An error occured, please contact the support.',
       });
     }
 
-    console.log(
-      'License edited successfully, removing coins from user wallet: %d',
-      coins
+    logger.info(
+      `License edited successfully, removing coins from user wallet: ${coins}`
     );
-    const newLicenseEndDate = getLicenseEndDate(
-      licenseInfo.dateActivated,
-      licenseInfo.daysLeft + days
+
+    const newLicense = await fetchLicenseInfo(user.activeKey);
+    if (!newLicense) {
+      logger.error(`API error with ${user.activeKey}`);
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: 'An error occured, please contact the support.',
+      });
+    }
+
+    const newLicenseEndDate = new Date(newLicense.dateActivated);
+    newLicenseEndDate.setDate(
+      newLicenseEndDate.getDate() + newLicense.daysLeft
     );
-    console.log('New license end date: %s', newLicenseEndDate);
+
+    logger.info(`New license end date: ${newLicenseEndDate}`);
 
     await prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.update({
@@ -582,16 +605,16 @@ async function buySubtime(interaction: CommandInteraction) {
         },
       });
     });
-    console.log('Transaction completed');
+    logger.info('Transaction completed');
     await prisma.$disconnect();
     return interaction.editReply({
-      content: `You traded ${coins} coins from your wallet to buy ${days} days of subtime.\nYour new subtime is ${diffText(
+      content: `You traded ${coins} coins from your wallet to buy ${days} days of subtime.\nYour license key will expire in ${diffText(
         newLicenseEndDate,
         new Date()
       )}.`,
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error, 'Error buying subtime');
     prisma.$disconnect();
     return interaction.editReply(
       'An error occured, please contact the support.'

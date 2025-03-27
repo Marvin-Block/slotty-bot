@@ -1,5 +1,6 @@
 import { config } from '../config';
 import { LicenseInfo } from '../typeFixes';
+import { logger } from './logger';
 
 const baseOptions = {
   method: 'POST',
@@ -21,11 +22,12 @@ export async function fetchLicenseInfo(
       productPublicKey: config.PUBLIC_KEY,
     }),
   };
+  logger.info(`Fetching license info for ${key}`);
   const data = await fetch(url, options)
     .then((res) => res.json())
     .then((res: LicenseInfo) => res)
     .catch((err: Error) => {
-      console.error(err);
+      logger.error(err, 'Error fetching license info:');
       return null;
     });
   return data;
@@ -41,12 +43,12 @@ export async function editLicense(key: string, days: number) {
       daysToAdd: days,
     }),
   };
-  console.log(`Editing license with key: ${key}, days: ${days}`);
+  logger.info(`Editing license with key: ${key}, days: ${days}`);
   const data = await fetch(url, options)
     .then((res) => res.json())
     .then((res: boolean) => res)
     .catch((err: Error) => {
-      console.error(err);
+      logger.error(err, 'Error editing license:');
       return false;
     });
   return data;
