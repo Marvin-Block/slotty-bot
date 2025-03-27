@@ -148,11 +148,11 @@ async function roulette(interaction: CommandInteraction) {
 
   if (winners.size === 0) {
     embed2.setDescription(
-      `No winners this round.. Better luck next time!\nThe next round will start shortly!`
+      `No winners this round.. Better luck next time!\nThe next round will start in a few seconds!`
     );
   } else {
     embed2.setDescription(
-      `# **${type}** won! Congratulations to: \n\n ${winnerList}\n\nYour money will be added to your wallet.\nThe next round will start shortly!`
+      `# **${type}** won! Congratulations to: \n\n ${winnerList}\n\nYour money will be added to your wallet.\nThe next round will start in a few seconds!`
     );
   }
 
