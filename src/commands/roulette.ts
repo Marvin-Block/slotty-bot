@@ -178,10 +178,14 @@ async function roulette(interaction: CommandInteraction) {
   await new Promise((resolve) => setTimeout(resolve, 10_000));
   participants.clear();
   activeRoulette = false;
+  rouletteStart(interaction, true);
   return;
 }
 
-async function rouletteStart(interaction: CommandInteraction) {
+async function rouletteStart(
+  interaction: CommandInteraction,
+  isAutoStart: boolean = false
+) {
   if (activeRoulette) {
     interaction.followUp({
       content: 'Roulette is already active!',
@@ -200,12 +204,19 @@ async function rouletteStart(interaction: CommandInteraction) {
       `To enter slotty roulette, please react on the color you want to bet on\n## Voting will end ${time(
         rouletteStart,
         TimestampStyles.RelativeTime
-      )}`
+      )}\n\n**Red** - 2x payout\n**Gold** - 10x payout\n**Black** - 2x payout\n\nTo collect your daily reward use /wallet daily\nTo set your base bet use /wallet basebet`
     );
 
-  const message = await interaction.editReply({
-    embeds: [embed],
-  });
+  let message;
+  if (isAutoStart) {
+    message = await interaction.followUp({
+      embeds: [embed],
+    });
+  } else {
+    message = await interaction.editReply({
+      embeds: [embed],
+    });
+  }
 
   message.react(red);
   message.react(gold);
@@ -319,12 +330,12 @@ async function rouletteStart(interaction: CommandInteraction) {
           .setTitle('Roulette')
           .setColor('#601499')
           .setDescription('## Voting has ended and no one participated');
-        interaction.editReply({
+        message.edit({
           embeds: [embed2],
         });
         message.reactions.removeAll();
         await new Promise((resolve) => setTimeout(resolve, 10_000));
-        interaction.deleteReply();
+        message.delete();
         activeRoulette = false;
         participants.clear();
         return;
@@ -334,13 +345,13 @@ async function rouletteStart(interaction: CommandInteraction) {
           .setTitle('Roulette')
           .setColor('#601499')
           .setDescription('## Voting has ended and round will start shortly!');
-        interaction.editReply({
+        message.edit({
           embeds: [embed2],
         });
         message.reactions.removeAll();
         roulette(interaction);
         await new Promise((resolve) => setTimeout(resolve, 5_000));
-        interaction.deleteReply();
+        message.delete();
       }
     }
   );
