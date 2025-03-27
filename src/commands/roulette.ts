@@ -359,6 +359,9 @@ async function rouletteStart(interaction: CommandInteraction) {
         });
         await participants.clear();
         await message.reactions.removeAll();
+        activeRoulette = false;
+        rouletteMessageId = null;
+        rouletteChannelId = null;
         return;
       }
       if (reason == 'time') {
