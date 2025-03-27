@@ -21,7 +21,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   const content = `**Frequently Asked Questions**
-1️⃣ **How to Install Plugins?**
+1️⃣ **How do i install plugins?**
 Create a plugins folder in your loader directory. Add one plugin at a time.
 
 2️⃣ **What Do Plugins Do?**
@@ -33,21 +33,21 @@ No, most are covered by the core system. Check the feature list or plugin update
 4️⃣ **Nothing Happens Before Game?**
 Normal! Software activates in-game since the client and game are separate.
 
-5️⃣ **Inject After Game Starts?**
+5️⃣ **Can I Inject After Game Starts?**
 Yes, you can inject anytime. Just reinject if already in-game.
 
 6️⃣ **Haven’t Used It in a While?**
 No stress! Slotty automates most tasks after setup.
 
 7️⃣ **Hotkeys?**
-Space - combo
-Cltr+Space - full combo
-Z - flee
-X - lasthit
-C- harras
-V - waveclear
-Ctrl+V - fastclear
--# all hotkeys are customizable in the settings.
+SPACE - COMBO 
+CTRL + SPACE - FULL COMBO 
+Z - FLEE 
+X - LASTHIT
+C - HARRAS  
+V - LANE CLEAR
+CTRL + V - FAST CLEAR
+-# All hotkeys are customizable in the settings.
 `;
 
   return interaction.reply({
