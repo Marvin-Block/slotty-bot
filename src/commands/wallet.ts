@@ -12,6 +12,7 @@ import { editLicense, fetchLicenseInfo } from '../helper/api';
 import { diffText } from '../helper/dates';
 import { logger } from '../helper/logger';
 import { FixedOptions } from '../typeFixes';
+import { canChangeBaseBet } from './roulette';
 const prisma = new PrismaClient();
 
 export const type = 'slash';
@@ -296,6 +297,20 @@ async function setBaseBet(interaction: CommandInteraction) {
       flags: MessageFlags.Ephemeral,
     });
   }
+
+  const canChangeBet = await canChangeBaseBet(interaction.user.id);
+
+  if (!canChangeBet) {
+    logger.error(
+      'User is not allowed to change base bet while being in an active round of roulette'
+    );
+    return interaction.reply({
+      content:
+        'You cant change your basebet while being in an active round of roulette.',
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
   logger.info(
     `Setting base bet for user: ${interaction.user.id} with amount ${amount}`
   );

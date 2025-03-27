@@ -28,7 +28,10 @@ const red = '<a:red_slotted_gif:1351793841216290826>';
 const redId = '1351793841216290826';
 const participants = new Collection<string, string>();
 const rouletteTimer = 1000 * 60 * 0.5;
-// let activeRoulette = false;
+
+let activeRoulette = false;
+let rouletteMessageId: string | null = null;
+let rouletteChannelId: string | null = null;
 
 export const type = 'slash';
 export const name = 'roulette';
@@ -53,6 +56,13 @@ export async function execute(interaction: CommandInteraction) {
     default:
       return;
   }
+}
+
+export async function canChangeBaseBet(discordId: string) {
+  if (participants.has(discordId) && activeRoulette) {
+    return false;
+  }
+  return true;
 }
 
 async function roulette(interaction: CommandInteraction) {
@@ -106,33 +116,14 @@ async function roulette(interaction: CommandInteraction) {
     .setDescription('## Rolling...')
     .setImage(`attachment://Optimized-${type}-${rng2}.gif`);
 
-  // if (channels) {
-  //   channels.has(interaction.channelId);
-  //   channel = channels.get(interaction.channelId) as TextChannel;
-  //   if (channel && channel.isTextBased()) {
-  //     message = await channel.send({
-  //       embeds: [embed],
-  //       files: [attachment],
-  //     });
-  //     rouletteMessageId = message.id;
-  //     rouletteChannelId = message.channelId;
-  //   } else {
-  //     message = await interaction.followUp({
-  //       embeds: [embed],
-  //       files: [attachment],
-  //     });
-  //   }
-  // } else {
-  //   message = await interaction.followUp({
-  //     embeds: [embed],
-  //     files: [attachment],
-  //   });
-  // }
-
   const message = await interaction.followUp({
     embeds: [embed],
     files: [attachment],
   });
+
+  rouletteMessageId = message.id;
+  rouletteChannelId = message.channelId;
+
   // wait 18.63 seconds + loading buffer for gif to finish playing
   await new Promise((resolve) => setTimeout(resolve, 23_000));
 
@@ -202,34 +193,36 @@ async function roulette(interaction: CommandInteraction) {
   prisma.$disconnect();
   await new Promise((resolve) => setTimeout(resolve, 10_000));
   participants.clear();
-  // activeRoulette = false;
+  activeRoulette = false;
+  rouletteMessageId = null;
+  rouletteChannelId = null;
   // rouletteStart(interaction, true);
   return;
 }
 
 async function rouletteStart(interaction: CommandInteraction) {
-  // if (activeRoulette) {
-  //   if (rouletteChannelId && rouletteMessageId) {
-  //     const channel = await interaction.client.channels.fetch(
-  //       rouletteChannelId
-  //     );
-  //     if (channel && channel.isTextBased()) {
-  //       const message = await channel.messages.fetch(rouletteMessageId);
-  //       if (message) {
-  //         return interaction.followUp({
-  //           content: `Roulette is already active. \nHere is the link to the active roulette: ${message.url}`,
-  //           ephemeral: true,
-  //         });
-  //       }
-  //     }
-  //   }
-  //   return interaction.followUp({
-  //     content: 'Roulette is already active!',
-  //     ephemeral: true,
-  //   });
-  // }
+  if (activeRoulette) {
+    if (rouletteChannelId && rouletteMessageId) {
+      const channel = await interaction.client.channels.fetch(
+        rouletteChannelId
+      );
+      if (channel && channel.isTextBased()) {
+        const message = await channel.messages.fetch(rouletteMessageId);
+        if (message) {
+          return interaction.followUp({
+            content: `Roulette is already active. \nHere is the link to the active roulette: ${message.url}`,
+            ephemeral: true,
+          });
+        }
+      }
+    }
+    return interaction.followUp({
+      content: 'Roulette is already active!',
+      ephemeral: true,
+    });
+  }
 
-  // activeRoulette = true;
+  activeRoulette = true;
 
   const timer = rouletteTimer;
   const rouletteStart = new Date(Date.now() + timer);
@@ -243,34 +236,12 @@ async function rouletteStart(interaction: CommandInteraction) {
       )}\n\n**${red}** - 2x payout\n**${gold}** - 10x payout\n**${black}** - 2x payout\n\nTo collect your daily reward use /wallet daily\nTo set your base bet use /wallet basebet`
     );
 
-  // if (isAutoStart) {
-  //   if (channels) {
-  //     channels.has(interaction.channelId);
-  //     channel = channels.get(interaction.channelId) as TextChannel;
-  //     if (channel && channel.isTextBased()) {
-  //       message = await channel.send({
-  //         embeds: [embed],
-  //       });
-  //       rouletteMessageId = message.id;
-  //       rouletteChannelId = message.channelId;
-  //     } else {
-  //       message = await interaction.followUp({
-  //         embeds: [embed],
-  //       });
-  //     }
-  //   } else {
-  //     message = await interaction.followUp({
-  //       embeds: [embed],
-  //     });
-  //   }
-  // } else {
-  //   message = await interaction.editReply({
-  //     embeds: [embed],
-  //   });
-  // }
   const message = await interaction.editReply({
     embeds: [embed],
   });
+  rouletteMessageId = message.id;
+  rouletteChannelId = message.channelId;
+
   message.react(red);
   message.react(gold);
   message.react(black);
@@ -413,9 +384,21 @@ async function rouletteStart(interaction: CommandInteraction) {
           where: { discordID: user.id },
           include: { wallet: true, transactions: true },
         });
-        if (!dbUser || !dbUser.wallet) {
+        if (!dbUser || !dbUser.wallet || !dbUser.transactions) {
+          await prisma.$disconnect();
+          logger.error('Cant find user, wallet or transactions');
           return interaction.followUp({
-            content: `Cant find user or wallet, please contact support.`,
+            content: `Cant find user, wallet or transactions, please contact support.`,
+            ephemeral: true,
+          });
+        }
+        if (dbUser.transactions.length == 0) {
+          logger.error('User has no transactions');
+          await prisma.$disconnect();
+          return interaction.followUp({
+            content: `${userMention(
+              user.id
+            )} has no transactions, please contact support.`,
             ephemeral: true,
           });
         }
@@ -446,13 +429,6 @@ async function rouletteStart(interaction: CommandInteraction) {
               },
             });
           });
-          // if (channel) {
-          //   return channel.send(
-          //     `${userMention(
-          //       user.id
-          //     )} pulled out. Your money has been refunded!`
-          //   );
-          // }
           return interaction.followUp({
             content: `${userMention(
               user.id
