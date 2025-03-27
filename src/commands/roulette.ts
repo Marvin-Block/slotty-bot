@@ -21,7 +21,7 @@ import { FixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 const secRand = new SecureRandomGenerator();
 
-const gold = '<<a:gold_slotted_gif:1351793834681565214>>';
+const gold = '<a:gold_slotted_gif:1351793834681565214>';
 const goldId = '1351793834681565214';
 const black = '<a:black_slotted_gif:1351793837202473001>';
 const blackId = '1351793837202473001';
@@ -248,7 +248,7 @@ async function rouletteStart(
       `To enter slotty roulette, please react on the color you want to bet on\n## Voting will end ${time(
         rouletteStart,
         TimestampStyles.RelativeTime
-      )}\n\n**Red** - 2x payout\n**Gold** - 10x payout\n**Black** - 2x payout\n\nTo collect your daily reward use /wallet daily\nTo set your base bet use /wallet basebet`
+      )}\n\n**${red}** - 2x payout\n**${gold}** - 10x payout\n**${black}** - 2x payout\n\nTo collect your daily reward use /wallet daily\nTo set your base bet use /wallet basebet`
     );
 
   const channels = await interaction.guild?.channels.fetch();
@@ -410,10 +410,10 @@ async function rouletteStart(
         await message.edit({
           embeds: [embed2],
         });
-        await message.reactions.removeAll();
-        await message.delete();
-        activeRoulette = false;
         await participants.clear();
+        await message.reactions.removeAll();
+        activeRoulette = false;
+        return;
       }
       if (reason == 'time') {
         const embed2 = new EmbedBuilder()
@@ -423,8 +423,9 @@ async function rouletteStart(
         message.edit({
           embeds: [embed2],
         });
-        roulette(interaction);
+        return roulette(interaction);
       }
+      return;
     }
   );
   collector.on('remove', async (reaction: MessageReaction, user: User) => {
