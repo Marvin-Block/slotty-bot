@@ -486,6 +486,14 @@ async function buySubtime(interaction: CommandInteraction) {
   const options = interaction.options as FixedOptions;
   const days = options.getInteger('days');
 
+  if (interaction.user.id === '1218607597708644472') {
+    logger.error('antiSou tried to trade coins for subtime');
+    await prisma.$disconnect();
+    return interaction.editReply({
+      content: 'You are not allowed to use this command.',
+    });
+  }
+
   if (!days) {
     logger.error('Interaction option days not found');
     return interaction.editReply({
