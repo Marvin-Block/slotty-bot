@@ -17,27 +17,29 @@ export async function deployCommands(
   }
 ) {
   logger.info(`Collecting commands for guild ${guildId}`);
-  const commandsData = client.commands.map((command: CommandCollection) => {
-    if (command.allowed_servers) {
-      if (command.allowed_servers.includes(guildId)) {
-        logger.info(`- ${command.data.name}`);
-        if (command.data.options.length > 0) {
-          for (let i = 0; i < command.data.options.length; i++) {
-            if (i === command.data.options.length - 1) {
-              logger.info(`  └ ${command.data.options[i].name}`);
-              break;
+  const commandsData = client.commands
+    .map((command: CommandCollection) => {
+      if (command.allowed_servers) {
+        if (command.allowed_servers.includes(guildId)) {
+          logger.info(`- ${command.data.name}`);
+          if (command.data.options.length > 0) {
+            for (let i = 0; i < command.data.options.length; i++) {
+              if (i === command.data.options.length - 1) {
+                logger.info(`  └ ${command.data.options[i].name}`);
+                break;
+              }
+              logger.info(`  ├ ${command.data.options[i].name}`);
             }
-            logger.info(`  ├ ${command.data.options[i].name}`);
           }
+          return command.data;
         }
-        return command.data;
       }
-    }
-    return null;
-  });
+      return null;
+    })
+    .filter((command) => command !== null);
   logger.info(`Collecting context menu commands for guild ${guildId}`);
-  const contextMenuData = client.contextMenuCommands.map(
-    (command: ContextMenuCommandCollection) => {
+  const contextMenuData = client.contextMenuCommands
+    .map((command: ContextMenuCommandCollection) => {
       if (command.allowed_servers) {
         if (command.allowed_servers.includes(guildId)) {
           logger.info(`- ${command.contextMenuData.name}`);
@@ -45,8 +47,8 @@ export async function deployCommands(
         }
       }
       return null;
-    }
-  );
+    })
+    .filter((command) => command !== null);
   try {
     logger.info('Started applying commands.');
     await rest.put(
