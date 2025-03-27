@@ -8,6 +8,7 @@ import {
   MessageReaction,
   ReadonlyCollection,
   SlashCommandBuilder,
+  TextChannel,
   time,
   TimestampStyles,
   User,
@@ -29,6 +30,8 @@ const redId = '1351793841216290826';
 const participants = new Collection<string, string>();
 const rouletteTimer = 1000 * 60 * 0.5;
 let activeRoulette = false;
+let rouletteChannelId: string | null = null;
+let rouletteMessageId: string | null = null;
 
 export const type = 'slash';
 export const name = 'roulette';
@@ -106,10 +109,32 @@ async function roulette(interaction: CommandInteraction) {
     .setDescription('## Rolling...')
     .setImage(`attachment://Optimized-${type}-${rng2}.gif`);
 
-  const rouletteMessage = await interaction.followUp({
-    embeds: [embed],
-    files: [attachment],
-  });
+  const channels = await interaction.guild?.channels.fetch();
+  let channel: TextChannel | null;
+  let message;
+
+  if (channels) {
+    channels.has(interaction.channelId);
+    channel = channels.get(interaction.channelId) as TextChannel;
+    if (channel && channel.isTextBased()) {
+      message = await channel.send({
+        embeds: [embed],
+        files: [attachment],
+      });
+      rouletteMessageId = message.id;
+      rouletteChannelId = message.channelId;
+    } else {
+      message = await interaction.followUp({
+        embeds: [embed],
+        files: [attachment],
+      });
+    }
+  } else {
+    message = await interaction.followUp({
+      embeds: [embed],
+      files: [attachment],
+    });
+  }
 
   // wait 18.63 seconds + loading buffer for gif to finish playing
   await new Promise((resolve) => setTimeout(resolve, 23_000));
@@ -122,13 +147,16 @@ async function roulette(interaction: CommandInteraction) {
   const embed2 = new EmbedBuilder().setTitle('Roulette').setColor('#601499');
 
   if (winners.size === 0) {
-    embed2.setDescription(`No winners this round.. Better luck next time!`);
+    embed2.setDescription(
+      `No winners this round.. Better luck next time!\nThe next round will start shortly!`
+    );
   } else {
     embed2.setDescription(
-      `# **${type}** won! Congratulations to: \n\n ${winnerList}\n\nYour money will be added to your wallet shortly!`
+      `# **${type}** won! Congratulations to: \n\n ${winnerList}\n\nYour money will be added to your wallet.\nThe next round will start shortly!`
     );
   }
-  rouletteMessage.edit({
+
+  message.edit({
     embeds: [embed2],
     files: [],
   });
@@ -187,14 +215,30 @@ async function rouletteStart(
   isAutoStart: boolean = false
 ) {
   if (activeRoulette) {
-    interaction.followUp({
+    if (rouletteChannelId && rouletteMessageId) {
+      const channel = await interaction.client.channels.fetch(
+        rouletteChannelId
+      );
+      if (channel && channel.isTextBased()) {
+        const message = await channel.messages.fetch(rouletteMessageId);
+        if (message) {
+          return interaction.followUp({
+            content: `Roulette is already active. \nHere is the link to the active roulette: ${message.url}`,
+            ephemeral: true,
+          });
+        }
+      }
+    }
+    return interaction.followUp({
       content: 'Roulette is already active!',
       ephemeral: true,
     });
-    new Promise((resolve) => setTimeout(resolve, 15_000));
-    return;
   }
+
   activeRoulette = true;
+  rouletteChannelId = interaction.channelId;
+  rouletteMessageId = interaction.id;
+
   const timer = rouletteTimer;
   const rouletteStart = new Date(Date.now() + timer);
   const embed = new EmbedBuilder()
@@ -207,11 +251,30 @@ async function rouletteStart(
       )}\n\n**Red** - 2x payout\n**Gold** - 10x payout\n**Black** - 2x payout\n\nTo collect your daily reward use /wallet daily\nTo set your base bet use /wallet basebet`
     );
 
+  const channels = await interaction.guild?.channels.fetch();
+  let channel: TextChannel | null;
   let message;
+
   if (isAutoStart) {
-    message = await interaction.followUp({
-      embeds: [embed],
-    });
+    if (channels) {
+      channels.has(interaction.channelId);
+      channel = channels.get(interaction.channelId) as TextChannel;
+      if (channel && channel.isTextBased()) {
+        message = await channel.send({
+          embeds: [embed],
+        });
+        rouletteMessageId = message.id;
+        rouletteChannelId = message.channelId;
+      } else {
+        message = await interaction.followUp({
+          embeds: [embed],
+        });
+      }
+    } else {
+      message = await interaction.followUp({
+        embeds: [embed],
+      });
+    }
   } else {
     message = await interaction.editReply({
       embeds: [embed],
@@ -264,6 +327,13 @@ async function rouletteStart(
         await message.reactions
           .resolve(reaction.emoji.id!)
           ?.users.remove(user.id);
+        if (channel) {
+          return channel.send(
+            `${userMention(
+              user.id
+            )} does not have enough coins to play roulette!`
+          );
+        }
         return interaction.followUp({
           content: `${userMention(
             user.id
@@ -297,7 +367,14 @@ async function rouletteStart(
             voteType = 'Black';
             break;
         }
-        interaction.followUp({
+        if (channel) {
+          return channel.send(
+            `${userMention(user.id)} has joined roulette and bet ${
+              dbUser.wallet.baseBet
+            } coins on ${voteType}!`
+          );
+        }
+        return interaction.followUp({
           content: `${userMention(user.id)} has joined roulette and bet ${
             dbUser.wallet.baseBet
           } coins on ${voteType}!`,
@@ -316,7 +393,7 @@ async function rouletteStart(
   });
   collector.on('create', async (reaction: MessageReaction, user: User) => {
     if (message.author.id === user.id) return;
-    await reaction.remove();
+    return await reaction.remove();
   });
   collector.on(
     'end',
@@ -338,7 +415,6 @@ async function rouletteStart(
         message.delete();
         activeRoulette = false;
         participants.clear();
-        return;
       }
       if (reason == 'time') {
         const embed2 = new EmbedBuilder()
@@ -348,10 +424,7 @@ async function rouletteStart(
         message.edit({
           embeds: [embed2],
         });
-        message.reactions.removeAll();
         roulette(interaction);
-        await new Promise((resolve) => setTimeout(resolve, 5_000));
-        message.delete();
       }
     }
   );
@@ -398,7 +471,13 @@ async function rouletteStart(
               },
             });
           });
-
+          if (channel) {
+            return channel.send(
+              `${userMention(
+                user.id
+              )} pulled out. Your money has been refunded!`
+            );
+          }
           return interaction.followUp({
             content: `${userMention(
               user.id

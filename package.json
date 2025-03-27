@@ -9,7 +9,7 @@
     "build": "tsup src/index.ts --minify",
     "serve": "http-server ./",
     "seed": "prisma db seed",
-    "migrate": "prisma migrate dev --name init"
+    "migrate": "prisma db push"
   },
   "dependencies": {
     "@prisma/client": "6.3.0",
