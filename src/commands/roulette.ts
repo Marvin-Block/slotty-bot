@@ -407,14 +407,13 @@ async function rouletteStart(
           .setTitle('Roulette')
           .setColor('#601499')
           .setDescription('## Voting has ended and no one participated');
-        message.edit({
+        await message.edit({
           embeds: [embed2],
         });
-        message.reactions.removeAll();
-        await new Promise((resolve) => setTimeout(resolve, 10_000));
-        message.delete();
+        await message.reactions.removeAll();
+        await message.delete();
         activeRoulette = false;
-        participants.clear();
+        await participants.clear();
       }
       if (reason == 'time') {
         const embed2 = new EmbedBuilder()
