@@ -13,6 +13,7 @@ import {
   User,
   userMention,
 } from 'discord.js';
+import { config } from '../config';
 import { logger } from '../helper/logger';
 import { SecureRandomGenerator } from '../secure_random_number';
 import { FixedOptions } from '../typeFixes';
@@ -20,14 +21,11 @@ import { FixedOptions } from '../typeFixes';
 const prisma = new PrismaClient();
 const secRand = new SecureRandomGenerator();
 
-const gold = '<a:gold_slotted_gif:1351793834681565214>';
-const goldId = '1351793834681565214';
-const black = '<a:black_slotted_gif:1351793837202473001>';
-const blackId = '1351793837202473001';
-const red = '<a:red_slotted_gif:1351793841216290826>';
-const redId = '1351793841216290826';
+const gold = getEmote(config.GOLD);
+const black = getEmote(config.BLACK);
+const red = getEmote(config.RED);
 const participants = new Collection<string, string>();
-const rouletteTimer = 1000 * 60 * 0.5;
+const rouletteTimer = 1000 * 60 * 5;
 
 let activeRoulette = false;
 let rouletteMessageId: string | null = null;
@@ -76,7 +74,7 @@ async function roulette(interaction: CommandInteraction) {
     await secRand.generateSecureRandom(1, 24).then((rng) => {
       rng2 = rng.number;
       type = 'Red';
-      typeId = redId;
+      typeId = red.id;
     });
   }
   // Gold - 10% chance
@@ -85,7 +83,7 @@ async function roulette(interaction: CommandInteraction) {
     await secRand.generateSecureRandom(1, 5).then((rng) => {
       rng2 = rng.number;
       type = 'Gold';
-      typeId = goldId;
+      typeId = gold.id;
     });
   }
   // Black - 45% chance
@@ -94,7 +92,7 @@ async function roulette(interaction: CommandInteraction) {
     await secRand.generateSecureRandom(1, 24).then((rng) => {
       rng2 = rng.number;
       type = 'Black';
-      typeId = blackId;
+      typeId = black.id;
     });
   }
 
@@ -190,8 +188,7 @@ async function roulette(interaction: CommandInteraction) {
     });
   }
 
-  prisma.$disconnect();
-  await new Promise((resolve) => setTimeout(resolve, 10_000));
+  await prisma.$disconnect();
   participants.clear();
   activeRoulette = false;
   rouletteMessageId = null;
@@ -233,7 +230,11 @@ async function rouletteStart(interaction: CommandInteraction) {
       `To enter slotty roulette, please react on the color you want to bet on\n## Voting will end ${time(
         rouletteStart,
         TimestampStyles.RelativeTime
-      )}\n\n**${red}** - 2x payout\n**${gold}** - 10x payout\n**${black}** - 2x payout\n\nTo collect your daily reward use /wallet daily\nTo set your base bet use /wallet basebet`
+      )}\n\n**${red.fullString}** - 2x payout\n**${
+        gold.fullString
+      }** - 10x payout\n**${
+        black.fullString
+      }** - 2x payout\n\nTo collect your daily reward use /wallet daily\nTo set your base bet use /wallet basebet`
     );
 
   const message = await interaction.editReply({
@@ -242,9 +243,9 @@ async function rouletteStart(interaction: CommandInteraction) {
   rouletteMessageId = message.id;
   rouletteChannelId = message.channelId;
 
-  message.react(red);
-  message.react(gold);
-  message.react(black);
+  message.react(red.fullString);
+  message.react(gold.fullString);
+  message.react(black.fullString);
 
   const collector = message.createReactionCollector({
     time: timer,
@@ -254,9 +255,8 @@ async function rouletteStart(interaction: CommandInteraction) {
   collector.on('collect', async (reaction: MessageReaction, user: User) => {
     if (
       !(
-        ['red_slotted_gif', 'gold_slotted_gif', 'black_slotted_gif'].includes(
-          reaction.emoji.name!
-        ) && message.author.id !== user.id
+        [red.name, gold.name, black.name].includes(reaction.emoji.name!) &&
+        message.author.id !== user.id
       )
     )
       return;
@@ -311,13 +311,13 @@ async function rouletteStart(interaction: CommandInteraction) {
         });
         var voteType = '';
         switch (reaction.emoji.name) {
-          case 'red_slotted_gif':
+          case red.name:
             voteType = 'Red';
             break;
-          case 'gold_slotted_gif':
+          case gold.name:
             voteType = 'Gold';
             break;
-          case 'black_slotted_gif':
+          case black.name:
             voteType = 'Black';
             break;
         }
@@ -379,7 +379,14 @@ async function rouletteStart(interaction: CommandInteraction) {
   );
   collector.on('remove', async (reaction: MessageReaction, user: User) => {
     const userEntry = participants.get(user.id);
-    if (userEntry && userEntry === reaction.emoji.id) {
+    let skipRemove = false;
+    message.reactions.cache.forEach(async (reaction) => {
+      if (reaction.users.cache.has(user.id)) {
+        skipRemove = true;
+        return;
+      }
+    });
+    if (userEntry && userEntry === reaction.emoji.id && !skipRemove) {
       participants.delete(user.id);
       logger.info(`Removed reaction: ${userEntry}`);
       try {
@@ -440,7 +447,7 @@ async function rouletteStart(interaction: CommandInteraction) {
         }
       } catch (error) {
         logger.error(error, 'Error on removing vote');
-        prisma.$disconnect();
+        await prisma.$disconnect();
         return interaction.followUp({
           content: `Error on removing vote, please contact support.`,
           ephemeral: true,
@@ -449,4 +456,23 @@ async function rouletteStart(interaction: CommandInteraction) {
     }
     return;
   });
+}
+
+function getEmote(emoteString: string) {
+  const emote = emoteString.match(/(<a?)?:\w+:(\d{18,19}>)?/g);
+  if (!emote) {
+    return {
+      fullString: '',
+      name: '',
+      id: '',
+    };
+  }
+  const cleanEmoteString = emote[0].replaceAll(/<|>/gm, '');
+  const emoteName = cleanEmoteString.split(':')[1];
+  const emoteId = cleanEmoteString.split(':')[2];
+  return {
+    fullString: emote[0],
+    name: emoteName,
+    id: emoteId,
+  };
 }

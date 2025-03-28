@@ -17,6 +17,9 @@ const {
   API_KEY,
   PUBLIC_KEY,
   API_BASE_URL,
+  GOLD,
+  BLACK,
+  RED,
 } = process.env;
 
 if (
@@ -33,7 +36,10 @@ if (
   !CASINO_CHANNEL_ID ||
   !API_KEY ||
   !PUBLIC_KEY ||
-  !API_BASE_URL
+  !API_BASE_URL ||
+  !GOLD ||
+  !BLACK ||
+  !RED
 ) {
   throw new Error('Missing environment variables');
 }
@@ -53,6 +59,9 @@ export const config = {
   API_KEY,
   PUBLIC_KEY,
   API_BASE_URL,
+  GOLD,
+  BLACK,
+  RED,
 };
 
 async function loadSettings() {
