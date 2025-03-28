@@ -25,7 +25,7 @@ const gold = getEmote(config.GOLD);
 const black = getEmote(config.BLACK);
 const red = getEmote(config.RED);
 const participants = new Collection<string, string>();
-const rouletteTimer = 1000 * 60 * 5;
+const rouletteTimer = 1000 * 60 * 0.5;
 
 let activeRoulette = false;
 let rouletteMessageId: string | null = null;
@@ -262,6 +262,18 @@ async function rouletteStart(interaction: CommandInteraction) {
       return;
     let isNewUser = false;
     const userEntry = participants.get(user.id);
+    var voteType = '';
+    switch (reaction.emoji.name) {
+      case red.name:
+        voteType = 'Red';
+        break;
+      case gold.name:
+        voteType = 'Gold';
+        break;
+      case black.name:
+        voteType = 'Black';
+        break;
+    }
     if (!userEntry) {
       participants.set(user.id, reaction.emoji.id!);
       isNewUser = true;
@@ -272,6 +284,9 @@ async function rouletteStart(interaction: CommandInteraction) {
       logger.info(
         `Changed reaction from: ${userEntry} to ${reaction.emoji.id}`
       );
+      return interaction.followUp({
+        content: `${userMention(user.id)} changed their vote to ${voteType}!`,
+      });
     }
     try {
       const dbUser = await prisma.user.findFirst({
@@ -309,18 +324,6 @@ async function rouletteStart(interaction: CommandInteraction) {
             },
           });
         });
-        var voteType = '';
-        switch (reaction.emoji.name) {
-          case red.name:
-            voteType = 'Red';
-            break;
-          case gold.name:
-            voteType = 'Gold';
-            break;
-          case black.name:
-            voteType = 'Black';
-            break;
-        }
         return interaction.followUp({
           content: `${userMention(user.id)} has joined roulette and bet ${
             dbUser.wallet.baseBet
@@ -428,7 +431,9 @@ async function rouletteStart(interaction: CommandInteraction) {
           await prisma.$transaction(async (tx) => {
             const wallet = await tx.wallet.update({
               where: { id: dbUser.wallet!.id },
-              data: { balance: { increment: lastTransaction.amount } },
+              data: {
+                balance: { increment: Math.abs(lastTransaction.amount) },
+              },
             });
             await tx.transactions.create({
               data: {
