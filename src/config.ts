@@ -6,6 +6,7 @@ const {
   MODE,
   DISCORD_TOKEN,
   DISCORD_CLIENT_ID,
+  DISCORD_SECRET,
   BASE_PRICE,
   BTC_WALLET,
   LTC_WALLET,
@@ -20,12 +21,15 @@ const {
   GOLD,
   BLACK,
   RED,
+  PORT,
+  REDIRECT_URL,
 } = process.env;
 
 if (
   !MODE ||
   !DISCORD_TOKEN ||
   !DISCORD_CLIENT_ID ||
+  !DISCORD_SECRET ||
   !BASE_PRICE ||
   !BTC_WALLET ||
   !LTC_WALLET ||
@@ -39,7 +43,9 @@ if (
   !API_BASE_URL ||
   !GOLD ||
   !BLACK ||
-  !RED
+  !RED ||
+  !PORT ||
+  !REDIRECT_URL
 ) {
   throw new Error('Missing environment variables');
 }
@@ -48,6 +54,7 @@ export const config = {
   MODE,
   DISCORD_TOKEN,
   DISCORD_CLIENT_ID,
+  DISCORD_SECRET,
   WEEK_PRICE,
   BASE_PRICE,
   THREE_MONTH_PRICE,
@@ -62,6 +69,8 @@ export const config = {
   GOLD,
   BLACK,
   RED,
+  PORT,
+  REDIRECT_URL,
 };
 
 async function loadSettings() {

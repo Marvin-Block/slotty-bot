@@ -1,13 +1,19 @@
+import { join } from 'path';
 import { pino } from 'pino';
+import { LokiLogLevel } from 'pino-loki';
 
 const transport = pino.transport({
   targets: [
     {
-      level: 'trace',
-      target: 'pino/file',
+      level: process.env.PINO_LOG_LEVEL || 'info',
+      target: 'pino-roll',
       options: {
-        destination: './logs/file.log',
+        file: join('logs', 'log'),
+        frequency: 'daily',
         mkdir: true,
+        extension: 'log',
+        dateFormat: 'yyyy-MM-dd',
+        symlink: true,
       },
     },
     {
@@ -15,6 +21,23 @@ const transport = pino.transport({
       target: 'pino-pretty',
       options: {
         colorize: true,
+      },
+    },
+    {
+      level: process.env.PINO_LOG_LEVEL || 'info',
+      target: 'pino-loki',
+      options: {
+        batching: false,
+        convertArrays: true,
+        host: 'http://localhost:3100',
+        levelMap: {
+          10: LokiLogLevel.Debug,
+          20: LokiLogLevel.Debug,
+          30: LokiLogLevel.Info,
+          40: LokiLogLevel.Warning,
+          50: LokiLogLevel.Error,
+          60: LokiLogLevel.Critical,
+        },
       },
     },
   ],
