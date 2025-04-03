@@ -14,6 +14,7 @@ import {
   userMention,
 } from 'discord.js';
 import { config } from '../config';
+import { getEmote } from '../helper/getEmote';
 import { logger } from '../helper/logger';
 import { SecureRandomGenerator } from '../secure_random_number';
 import { FixedOptions } from '../typeFixes';
@@ -461,23 +462,4 @@ async function rouletteStart(interaction: CommandInteraction) {
     }
     return;
   });
-}
-
-function getEmote(emoteString: string) {
-  const emote = emoteString.match(/(<a?)?:\w+:(\d{18,19}>)?/g);
-  if (!emote) {
-    return {
-      fullString: '',
-      name: '',
-      id: '',
-    };
-  }
-  const cleanEmoteString = emote[0].replaceAll(/<|>/gm, '');
-  const emoteName = cleanEmoteString.split(':')[1];
-  const emoteId = cleanEmoteString.split(':')[2];
-  return {
-    fullString: emote[0],
-    name: emoteName,
-    id: emoteId,
-  };
 }

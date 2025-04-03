@@ -2,6 +2,7 @@ import * as blacklist from './blacklist';
 import * as bookmark from './bookmark';
 import * as crypto from './crypto';
 import * as echo from './echo';
+import * as emote from './emote';
 import * as faq from './faq';
 import * as knownissues from './knownissues';
 import * as license from './license';
@@ -28,5 +29,6 @@ export const commands = {
   reminder,
   verify,
   roulette,
+  emote,
   // federalreserve,
 };

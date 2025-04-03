@@ -241,6 +241,8 @@ app.get('/', async (req: express.Request, res: express.Response) => {
       logger.info('User response received');
 
       const userResponseData = (await userResponse.json()) as UserResponseData;
+      // TODO: Check if user is already oAuthed -> then update
+      // TODO: Check if user is blacklisted
 
       const guildReponse = await fetch(guildUrl, {
         headers: {
