@@ -10,6 +10,7 @@ import * as licenseandloader from './licenseandloader';
 import * as reminder from './reminder';
 import * as roulette from './roulette';
 import * as stats from './stats';
+import * as status from './status';
 import * as verify from './verify';
 import * as wallet from './wallet';
 
@@ -30,5 +31,6 @@ export const commands = {
   verify,
   roulette,
   emote,
+  status,
   // federalreserve,
 };

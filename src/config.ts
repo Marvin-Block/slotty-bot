@@ -23,6 +23,7 @@ const {
   RED,
   PORT,
   REDIRECT_URL,
+  STATUS_CHANNEL_ID,
 } = process.env;
 
 if (
@@ -45,7 +46,8 @@ if (
   !BLACK ||
   !RED ||
   !PORT ||
-  !REDIRECT_URL
+  !REDIRECT_URL ||
+  !STATUS_CHANNEL_ID
 ) {
   throw new Error('Missing environment variables');
 }
@@ -71,6 +73,7 @@ export const config = {
   RED,
   PORT,
   REDIRECT_URL,
+  STATUS_CHANNEL_ID,
 };
 
 async function loadSettings() {
