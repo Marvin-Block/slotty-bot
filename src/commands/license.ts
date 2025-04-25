@@ -569,14 +569,14 @@ export async function updateLicenseInfo(guild: Guild) {
 
       const hoursSinceReminder = parseInt(diffHours(user.lastSubtimeReminder, new Date()).toFixed(1));
       const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
-      logger.debug(`${hoursSinceReminder} hours since last reminder`);
+      logger.info(`${hoursSinceReminder} hours since last reminder`);
       if (hoursSinceReminder > 18) continue;
-      logger.debug(`${daysLeft} days left`);
+      logger.info(`${daysLeft} days left`);
       if (daysLeft == 0) {
-        logger.debug(`User ${user.discordID} has less than a day on their key`);
+        logger.info(`User ${user.discordID} has less than a day on their key`);
         await subtimeReminder(guild, user.discordID, reminderText.oneDay);
       } else if (daysLeft == 2) {
-        logger.debug(`User ${user.discordID} has less than three days on their key`);
+        logger.info(`User ${user.discordID} has less than three days on their key`);
         await subtimeReminder(guild, user.discordID, reminderText.threeDays);
       }
     }
