@@ -18,6 +18,10 @@ export const whitelisted_users = [
   '846185075372720158', // sx
   '322659763643088897', // muffin
   '1145617537711734844', // zeri
+
+  '495280024891424769', // clouq
+  '704032133106237551', // erytrea
+  '854527909385338940', // sim
 ];
 
 export const data = new SlashCommandBuilder()
@@ -209,7 +213,7 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
       });
     }
 
-    logger.info(`Listing licenses for user ${interaction.user.id}`);
+    logger.info(`Listing licenses for user ${optionUser.id}`);
 
     const success = await updateLicenseInfo(interaction.guild!);
     if (!success) {
