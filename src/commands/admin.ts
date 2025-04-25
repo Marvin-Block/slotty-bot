@@ -1,52 +1,52 @@
-import { PrismaClient } from '@prisma/client';
-import { CommandInteraction, EmbedBuilder, InteractionContextType, MessageFlags, SlashCommandBuilder, time, TimestampStyles, userMention } from 'discord.js';
-import { fetchLicenseInfo } from '../helper/api';
-import { diffText } from '../helper/dates';
-import { logger } from '../helper/logger';
-import { FixedOptions } from '../typeFixes';
-import { giveRole, updateLicenseInfo } from './license';
+import { PrismaClient } from "@prisma/client";
+import { CommandInteraction, EmbedBuilder, InteractionContextType, MessageFlags, SlashCommandBuilder, time, TimestampStyles, userMention } from "discord.js";
+import { fetchLicenseInfo } from "../helper/api";
+import { diffText } from "../helper/dates";
+import { logger } from "../helper/logger";
+import { FixedOptions, LicenseInfo } from "../typeFixes";
+import { giveRole, updateLicenseInfo } from "./license";
 
 const prisma = new PrismaClient();
 
 const keyReg = /^([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}$/;
 
-export const type = 'slash';
-export const name = 'admin';
-export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+export const type = "slash";
+export const name = "admin";
+export const allowed_servers = ["1074973203249770538", "1300479915308613702"];
 export const whitelisted_users = [
-  '834847858439618620', // rsn
-  '846185075372720158', // sx
-  '322659763643088897', // muffin
-  '1145617537711734844', // zeri
+  "834847858439618620", // rsn
+  "846185075372720158", // sx
+  "322659763643088897", // muffin
+  "1145617537711734844", // zeri
 
-  '495280024891424769', // clouq
-  '704032133106237551', // erytrea
-  '854527909385338940', // sim
+  "495280024891424769", // clouq
+  "704032133106237551", // erytrea
+  "854527909385338940", // sim
 ];
 
 export const data = new SlashCommandBuilder()
-  .setName('admin')
-  .setDescription('Admin license commands')
+  .setName("admin")
+  .setDescription("Admin license commands")
   .setContexts(InteractionContextType.Guild)
   .setDefaultMemberPermissions(0)
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('link')
-      .setDescription('Link a slotted key to a discord account')
-      .addStringOption((option) => option.setName('key').setDescription('The key you want to link').setRequired(true))
-      .addUserOption((option) => option.setName('user').setDescription('The user you want to link the key to').setRequired(true))
+      .setName("link")
+      .setDescription("Link a slotted key to a discord account")
+      .addStringOption((option) => option.setName("key").setDescription("The key you want to link").setRequired(true))
+      .addUserOption((option) => option.setName("user").setDescription("The user you want to link the key to").setRequired(true))
   )
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('list')
-      .setDescription('Lists all linked keys of the specified user')
-      .addUserOption((option) => option.setName('user').setDescription('The user you want to list the keys of').setRequired(true))
+      .setName("list")
+      .setDescription("Lists all linked keys of the specified user")
+      .addUserOption((option) => option.setName("user").setDescription("The user you want to list the keys of").setRequired(true))
   )
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('info')
-      .setDescription('Shows information about a selected users active key')
-      .addUserOption((option) => option.setName('user').setDescription('The user you want to get the info of').setRequired(true))
+      .setName("info")
+      .setDescription("Shows information about a selected users active key")
+      .addUserOption((option) => option.setName("user").setDescription("The user you want to get the info of").setRequired(true))
   );
 
 export async function execute(interaction: CommandInteraction) {
@@ -56,15 +56,15 @@ export async function execute(interaction: CommandInteraction) {
   const subcommand = options.getSubcommand();
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   switch (subcommand) {
-    case 'link':
+    case "link":
       logger.info(`Admin link called by ${interaction.user.id}`);
       await linkLicense(interaction, options);
       break;
-    case 'list':
+    case "list":
       logger.info(`Admin list called by ${interaction.user.id}`);
       await listLicenses(interaction, options);
       break;
-    case 'info':
+    case "info":
       logger.info(`Admin info called by ${interaction.user.id}`);
       await getLicenseInfo(interaction, options);
       break;
@@ -73,31 +73,31 @@ export async function execute(interaction: CommandInteraction) {
 
 async function linkLicense(interaction: CommandInteraction, options: FixedOptions) {
   try {
-    const optionUser = options.getUser('user');
+    const optionUser = options.getUser("user");
 
     if (!optionUser) {
-      logger.error('Interaction option user not found');
+      logger.error("Interaction option user not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occurred, please contact the support.',
+        content: "An error occurred, please contact the support.",
       });
     }
 
     logger.info(`Attempting to link license key to user ${optionUser.id}`);
 
-    const key = options.getString('key');
+    const key = options.getString("key");
     if (!key) {
-      logger.error('Interaction option key not found');
+      logger.error("Interaction option key not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occurred, please contact the support.',
+        content: "An error occurred, please contact the support.",
       });
     }
     if (!keyReg.test(key)) {
       logger.error(`Invalid key format ${key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'The key you provided is not valid.',
+        content: "The key you provided is not valid.",
       });
     }
     logger.info(`Linking license key ${key}`);
@@ -107,35 +107,38 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       logger.error(`API error with ${key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
 
-    if (!license.active) {
-      await prisma.$disconnect();
-      logger.error(`${key} is no longer active`);
-      return interaction.editReply({
-        content: 'The key you provided is no longer active.',
-      });
-    }
+    if (!license.dateActivated === null || license.daysValid <= 0) {
+      if (!license.active) {
+        await prisma.$disconnect();
+        logger.error(`${key} is no longer active`);
+        return interaction.editReply({
+          content: "The key you provided is no longer active.",
+        });
+      }
 
-    if (!license.valid) {
-      logger.error(`${key} is no longer valid`);
-      await prisma.$disconnect();
-      return interaction.editReply({
-        content: 'The key you provided is no longer valid.',
-      });
+      if (!license.valid) {
+        logger.error(`${key} is no longer valid`);
+        await prisma.$disconnect();
+        return interaction.editReply({
+          content: "The key you provided is no longer valid.",
+        });
+      }
     }
 
     const dbKey = await prisma.key.findUnique({
       where: { key },
+      include: { user: true },
     });
 
-    if (dbKey) {
+    if (dbKey && dbKey.user.discordID !== optionUser.id) {
       logger.error(`${key} is already linked to another user`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'The key you provided is already linked to another user.',
+        content: "The key you provided is already linked to another user.",
       });
     }
 
@@ -147,12 +150,21 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       update: {
         activeKey: key,
         keys: {
-          create: {
-            key,
-            active: license.active,
-            valid: license.valid,
-            activationDate: new Date(license.dateActivated),
-            expirationDate: licenseEndDate,
+          upsert: {
+            where: { key },
+            update: {
+              active: license.active,
+              valid: license.valid,
+              activationDate: new Date(license.dateActivated),
+              expirationDate: licenseEndDate,
+            },
+            create: {
+              key,
+              active: license.active,
+              valid: license.valid,
+              activationDate: new Date(license.dateActivated),
+              expirationDate: licenseEndDate,
+            },
           },
         },
       },
@@ -180,7 +192,7 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       logger.error(`Error linking license key ${key} to user ${userMention(optionUser.id)}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'There was an error trying to link the key, please contact the support.',
+        content: "There was an error trying to link the key, please contact the support.",
       });
     }
 
@@ -191,25 +203,27 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
     await prisma.$disconnect();
 
     return interaction.editReply({
-      content: `\`${key}\` is now linked to ${userMention(optionUser.id)}.\nThe license key will expire in ${diffText(licenseEndDate, new Date())}.`,
+      content: `\`${key}\` is now linked to ${userMention(optionUser.id)}.\nThe license key will expire ${
+        license.dateActivated === null ? `${license.daysValid} Days after activation` : `in ${diffText(licenseEndDate, new Date())}`
+      }.`,
     });
   } catch (e) {
     logger.error(e);
     await prisma.$disconnect();
     return interaction.editReply({
-      content: 'An error occured, please contact the support.',
+      content: "An error occured, please contact the support.",
     });
   }
 }
 
 async function listLicenses(interaction: CommandInteraction, options: FixedOptions) {
   try {
-    const optionUser = options.getUser('user');
+    const optionUser = options.getUser("user");
     if (!optionUser) {
-      logger.error('Interaction option key not found');
+      logger.error("Interaction option user not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occurred, please contact the support.',
+        content: "An error occurred, please contact the support.",
       });
     }
 
@@ -217,10 +231,10 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
 
     const success = await updateLicenseInfo(interaction.guild!);
     if (!success) {
-      logger.error('Error updating license info');
+      logger.error("Error updating license info");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
 
@@ -230,10 +244,10 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
     });
 
     if (!user) {
-      logger.error('User not found');
+      logger.error("User not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occurred, please contact the support.',
+        content: "An error occurred, please contact the support.",
       });
     }
 
@@ -241,7 +255,7 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
       logger.error(`No licenses found for user ${optionUser.id}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'There are no licenses linked to your account yet.',
+        content: "There are no licenses linked to your account yet.",
       });
     }
 
@@ -257,15 +271,10 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
       valid: boolean;
       activationDate: Date;
       expirationDate: Date;
+      license?: LicenseInfo;
     }[] = [];
 
     for (const key of keys) {
-      if (key.updatedAt > new Date(Date.now() - 1000 * 60 * 10)) {
-        logger.debug(`last update ${key.updatedAt.toISOString()}, ${new Date(Date.now() - 1000 * 60 * 5).toISOString()}`);
-        logger.info(`Key ${key.key} was updated recently, skipping`);
-        updatedKeys.push(key);
-        continue;
-      }
       const license = await fetchLicenseInfo(key.key);
       if (!license) {
         logger.error(`API error with ${key.key}`);
@@ -288,25 +297,37 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
 
       logger.info(`${key.key} has been updated`);
 
-      updatedKeys.push(newKey);
+      updatedKeys.push({ ...newKey, license });
     }
 
-    let embedDescription = '';
+    let embedDescription = "";
     updatedKeys.forEach((key) => {
       embedDescription += `**License #${key.id}**\n`;
-      embedDescription += '├ Key: `' + key.key + '`\n';
-      embedDescription += `├ Expires in: ${diffText(key.expirationDate, new Date())}\n`;
-      embedDescription += `├ Activation Time: ${time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
-      embedDescription += `└ Status: ${key.active ? '**Active**' : '**Inactive**'}\n\n`;
+      embedDescription += "├ Key: `" + key.key + "`\n";
+      if (key.license) {
+        embedDescription += `├ Expires${
+          key.license.dateActivated === null ? `: ${key.license.daysValid} Days after activation` : `in: ${diffText(key.expirationDate, new Date())}`
+        }\n`;
+        embedDescription += `├ Activation Time: ${
+          key.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)
+        }\n`;
+      } else {
+        embedDescription += `├ Expires in: ${diffText(key.expirationDate, new Date())}\n`;
+        embedDescription += `├ Activation Time: ${time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
+      }
+      embedDescription += `└ Status: ${key.active ? "**Active**" : "**Inactive**"}\n\n`;
     });
 
     const embed = new EmbedBuilder()
-      .setTitle('Slotted Key Manager')
+      .setTitle("Slotted Key Manager")
       .setDescription(embedDescription)
       .setThumbnail(optionUser.displayAvatarURL({ forceStatic: false }))
-      .setFooter({ text: `Requested by ${interaction.user.displayName}`, iconURL: interaction.user.displayAvatarURL({ forceStatic: false }) })
+      .setFooter({
+        text: `Requested by ${interaction.user.displayName}`,
+        iconURL: interaction.user.displayAvatarURL({ forceStatic: false }),
+      })
       .setTimestamp()
-      .setColor('#500de0');
+      .setColor("#500de0");
 
     await prisma.$disconnect();
     return interaction.editReply({
@@ -316,19 +337,19 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
     logger.error(error);
     await prisma.$disconnect();
     return interaction.editReply({
-      content: 'An error occured, please contact the support.',
+      content: "An error occured, please contact the support.",
     });
   }
 }
 
 async function getLicenseInfo(interaction: CommandInteraction, options: FixedOptions) {
   try {
-    const optionUser = options.getUser('user');
+    const optionUser = options.getUser("user");
     if (!optionUser) {
-      logger.error('Interaction option key not found');
+      logger.error("Interaction option user not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occurred, please contact the support.',
+        content: "An error occurred, please contact the support.",
       });
     }
 
@@ -336,10 +357,10 @@ async function getLicenseInfo(interaction: CommandInteraction, options: FixedOpt
 
     const success = await updateLicenseInfo(interaction.guild!);
     if (!success) {
-      logger.error('Error updating license info');
+      logger.error("Error updating license info");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
 
@@ -349,10 +370,10 @@ async function getLicenseInfo(interaction: CommandInteraction, options: FixedOpt
     });
 
     if (!user) {
-      logger.error('User not found');
+      logger.error("User not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
 
@@ -362,7 +383,7 @@ async function getLicenseInfo(interaction: CommandInteraction, options: FixedOpt
       logger.error(`No active license found for user ${optionUser.id}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'There is no active license linked to your account yet.',
+        content: "There is no active license linked to your account yet.",
       });
     } else if (!user.activeKey && useableKey) {
       logger.info(`User ${optionUser.id} has a useable key but no active key`);
@@ -385,7 +406,7 @@ async function getLicenseInfo(interaction: CommandInteraction, options: FixedOpt
       logger.error(`No active license found for user ${optionUser.id}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'There is no active license linked to your account yet.',
+        content: "There is no active license linked to your account yet.",
       });
     }
 
@@ -394,7 +415,7 @@ async function getLicenseInfo(interaction: CommandInteraction, options: FixedOpt
       logger.error(`API error with ${activeKey.key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
     const licenseEndDate = new Date(newLicense.dateActivated);
@@ -410,33 +431,39 @@ async function getLicenseInfo(interaction: CommandInteraction, options: FixedOpt
       },
     });
     logger.info(`${activeKey.key} has been updated`);
-
-    let embedDescription = '';
+    let embedDescription = "";
     embedDescription += `**License #${activeKey.id}**\n`;
-    embedDescription += '├ User: ' + optionUser.displayName + '\n';
-    embedDescription += '├ Key: `' + activeKey.key + '`\n';
-    embedDescription += `├ Expires in: ${diffText(licenseEndDate, new Date())}\n`;
-    embedDescription += `├ Activation Time: ${time(activeKey.activationDate, TimestampStyles.ShortDateTime)}\n`;
-    embedDescription += `└ Status: ${activeKey.active ? '**Active**' : 'Inactive'}\n\n`;
+    embedDescription += "├ User: " + optionUser.displayName + "\n";
+    embedDescription += "├ Key: `" + activeKey.key + "`\n";
+    embedDescription += `├ Expires${
+      newLicense.dateActivated === null ? `: ${newLicense.daysValid} Days after activation` : `in: ${diffText(licenseEndDate, new Date())}`
+    }\n`;
+    embedDescription += `├ Activation Time: ${
+      activeKey.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(activeKey.activationDate, TimestampStyles.ShortDateTime)
+    }\n`;
+    embedDescription += `└ Status: ${activeKey.active ? "**Active**" : "Inactive"}\n\n`;
 
     const embed = new EmbedBuilder()
-      .setTitle('Slotted Key Manager')
+      .setTitle("Slotted Key Manager")
       .setDescription(embedDescription)
       .setThumbnail(optionUser.displayAvatarURL({ forceStatic: false }))
-      .setFooter({ text: `Requested by ${interaction.user.displayName}`, iconURL: interaction.user.displayAvatarURL({ forceStatic: false }) })
+      .setFooter({
+        text: `Requested by ${interaction.user.displayName}`,
+        iconURL: interaction.user.displayAvatarURL({ forceStatic: false }),
+      })
       .setTimestamp()
-      .setColor('#500de0');
+      .setColor("#500de0");
 
     await prisma.$disconnect();
     return interaction.editReply({
-      content: 'Here is the requested license info:',
+      content: "Here is the requested license info:",
       embeds: [embed],
     });
   } catch (error) {
-    logger.error(error, 'Error getting license info');
+    logger.error(error, "Error getting license info");
     await prisma.$disconnect();
     return interaction.editReply({
-      content: 'An error occured, please contact the support.',
+      content: "An error occured, please contact the support.",
     });
   }
 }

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import {
   ApplicationCommandType,
   AttachmentBuilder,
@@ -9,36 +9,29 @@ import {
   MessageFlags,
   SlashCommandBuilder,
   UserContextMenuCommandInteraction,
-} from 'discord.js';
-import * as fs from 'fs';
-import nodeHtmlToImage from 'node-html-to-image';
-import { diffDays, diffText } from '../helper/dates';
-import { FixedImageOptions, FixedOptions, SaluteUser } from '../typeFixes';
+} from "discord.js";
+import * as fs from "fs";
+import nodeHtmlToImage from "node-html-to-image";
+import { diffDays, diffText } from "../helper/dates";
+import { FixedImageOptions, FixedOptions, SaluteUser } from "../typeFixes";
 
 const prisma = new PrismaClient();
 
-export const type = 'slash';
-export const name = 'stats';
-export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+export const type = "slash";
+export const name = "stats";
+export const allowed_servers = ["1074973203249770538", "1300479915308613702"];
 
 export const data = new SlashCommandBuilder()
-  .setName('stats')
+  .setName("stats")
   .setContexts(InteractionContextType.Guild)
-  .addSubcommand((subcommand) =>
-    subcommand.setName('top').setDescription('Shows the Top 10 saluters.')
-  )
+  .addSubcommand((subcommand) => subcommand.setName("top").setDescription("Shows the Top 10 saluters."))
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('user')
-      .setDescription('Shows the stats of a user.')
-      .addUserOption((option) =>
-        option
-          .setName('user')
-          .setDescription('The user you want to see the stats of.')
-          .setRequired(true)
-      )
+      .setName("user")
+      .setDescription("Shows the stats of a user.")
+      .addUserOption((option) => option.setName("user").setDescription("The user you want to see the stats of.").setRequired(true))
   )
-  .setDescription('Salute Stats');
+  .setDescription("Salute Stats");
 
 export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as FixedOptions;
@@ -46,12 +39,12 @@ export async function execute(interaction: CommandInteraction) {
 
   await interaction.deferReply();
 
-  if (subcommand === 'user') {
-    const user = options.getUser('user');
-    const file = fs.readFileSync('./stats.html', 'utf-8');
+  if (subcommand === "user") {
+    const user = options.getUser("user");
+    const file = fs.readFileSync("./stats.html", "utf-8");
 
     if (!user) {
-      return interaction.editReply('No user found.');
+      return interaction.editReply("No user found.");
     }
 
     const saluteUser = await prisma.user.findFirst({
@@ -60,10 +53,10 @@ export async function execute(interaction: CommandInteraction) {
     });
 
     if (!saluteUser) {
-      return interaction.editReply('No salutes found.');
+      return interaction.editReply("No salutes found.");
     }
 
-    let subTime = 'None';
+    let subTime = "None";
     let slottedCoins = 0;
     let highestWin = 0;
     let highestLoss = 0;
@@ -73,11 +66,9 @@ export async function execute(interaction: CommandInteraction) {
         where: { key: saluteUser.activeKey },
       });
       if (key) {
-        const days = parseInt(
-          diffDays(key.expirationDate, new Date()).toFixed(0)
-        );
+        const days = parseInt(diffDays(key.expirationDate, new Date()).toFixed(0));
         if (days > 500) {
-          subTime = 'Lifetime';
+          subTime = "Lifetime";
         } else {
           subTime = diffText(key.expirationDate, new Date());
         }
@@ -101,30 +92,28 @@ export async function execute(interaction: CommandInteraction) {
     await member?.user.fetch();
 
     await nodeHtmlToImage({
-      output: './assets/stats.png',
+      output: "./assets/stats.png",
       html: file,
       puppeteerArgs: {
         headless: true,
-        args: ['--no-sandbox'],
+        args: ["--no-sandbox"],
         defaultViewport: {
           width: 800,
           height: 1000,
         },
       },
-      type: 'png',
+      type: "png",
       transparent: true,
       handlebarsHelpers: {},
       content: {
         user: {
           avatarUrl: member!.displayAvatarURL({
-            extension: 'png',
+            extension: "png",
             size: 4096,
           }),
           nickname: user.displayName,
           username: user.username,
-          banner:
-            member!.displayBannerURL({ extension: 'webp', size: 4096 }) ??
-            'https://zipline.sephiran.com/u/Tx4KlZ.gif',
+          banner: member!.displayBannerURL({ extension: "webp", size: 4096 }) ?? "https://zipline.sephiran.com/u/Tx4KlZ.gif",
           total,
           normal,
           rare,
@@ -139,12 +128,9 @@ export async function execute(interaction: CommandInteraction) {
       },
     } as FixedImageOptions);
 
-    const attachment = new AttachmentBuilder('./assets/stats.png');
+    const attachment = new AttachmentBuilder("./assets/stats.png");
 
-    const embed = new EmbedBuilder()
-      .setTitle('Here are the stats you requested.')
-      .setColor('#601499')
-      .setImage('attachment://stats.png');
+    const embed = new EmbedBuilder().setTitle("Here are the stats you requested.").setColor("#601499").setImage("attachment://stats.png");
 
     return interaction.editReply({
       embeds: [embed],
@@ -152,8 +138,8 @@ export async function execute(interaction: CommandInteraction) {
     });
   }
 
-  if (subcommand === 'top') {
-    const file = fs.readFileSync('./top-stats.html', 'utf-8');
+  if (subcommand === "top") {
+    const file = fs.readFileSync("./top-stats.html", "utf-8");
 
     const users = await prisma.user.findMany({
       include: { salutes: true, wallet: true },
@@ -181,8 +167,8 @@ export async function execute(interaction: CommandInteraction) {
       return {
         place: 0,
         discordID: id,
-        nickname: '',
-        avatarUrl: '',
+        nickname: "",
+        avatarUrl: "",
         total,
         normal,
         rare,
@@ -190,7 +176,7 @@ export async function execute(interaction: CommandInteraction) {
         legendary,
         mythic,
         slottedCoins: 0,
-        subTime: 'None',
+        subTime: "None",
       } as SaluteUser;
     });
 
@@ -209,7 +195,7 @@ export async function execute(interaction: CommandInteraction) {
     });
 
     if (!discordUserList) {
-      return interaction.editReply('No users found.');
+      return interaction.editReply("No users found.");
     }
 
     saluteUsers = saluteUsers.filter((u) => discordUserList.has(u.discordID));
@@ -219,7 +205,7 @@ export async function execute(interaction: CommandInteraction) {
       u.place = topUsers.findIndex((tu) => tu.discordID === u.discordID) + 1;
       u.nickname = user.nickname ?? user.user.globalName ?? user.user.username;
       u.avatarUrl = user.displayAvatarURL({
-        extension: 'png',
+        extension: "png",
         size: 4096,
       });
       const dbUser = await prisma.user.findFirst({
@@ -233,11 +219,9 @@ export async function execute(interaction: CommandInteraction) {
             where: { key: dbUser.activeKey },
           });
           if (key) {
-            const days = parseInt(
-              diffDays(key.expirationDate, new Date()).toFixed(0)
-            );
+            const days = parseInt(diffDays(key.expirationDate, new Date()).toFixed(0));
             if (days > 500) {
-              u.subTime = 'Lifetime';
+              u.subTime = "Lifetime";
             } else {
               u.subTime = diffText(key.expirationDate, new Date());
             }
@@ -247,17 +231,17 @@ export async function execute(interaction: CommandInteraction) {
     });
 
     await nodeHtmlToImage({
-      output: './assets/top-stats.png',
+      output: "./assets/top-stats.png",
       html: file,
       puppeteerArgs: {
         headless: true,
-        args: ['--no-sandbox'],
+        args: ["--no-sandbox"],
         defaultViewport: {
           width: 1280,
           height: 800,
         },
       },
-      type: 'png',
+      type: "png",
       transparent: true,
       handlebarsHelpers: {},
       content: {
@@ -265,12 +249,9 @@ export async function execute(interaction: CommandInteraction) {
       },
     } as FixedImageOptions);
 
-    const attachment = new AttachmentBuilder('./assets/top-stats.png');
+    const attachment = new AttachmentBuilder("./assets/top-stats.png");
 
-    const embed = new EmbedBuilder()
-      .setTitle('Top 10 Salute users')
-      .setColor('#601499')
-      .setImage('attachment://top-stats.png');
+    const embed = new EmbedBuilder().setTitle("Top 10 Salute users").setColor("#601499").setImage("attachment://top-stats.png");
 
     return interaction.editReply({
       embeds: [embed],
@@ -281,33 +262,25 @@ export async function execute(interaction: CommandInteraction) {
   return;
 }
 
-export const contextMenuData = new ContextMenuCommandBuilder()
-  .setName('Show Stats')
-  .setType(ApplicationCommandType.User);
+export const contextMenuData = new ContextMenuCommandBuilder().setName("Show Stats").setType(ApplicationCommandType.User);
 
-export async function contextMenuExecute(
-  interaction: UserContextMenuCommandInteraction
-) {
+export async function contextMenuExecute(interaction: UserContextMenuCommandInteraction) {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   await statUser(interaction);
 }
 
-async function statUser(
-  interaction: UserContextMenuCommandInteraction | CommandInteraction
-) {
+async function statUser(interaction: UserContextMenuCommandInteraction | CommandInteraction) {
   let user;
   if (interaction.isContextMenuCommand()) {
     user = (interaction as UserContextMenuCommandInteraction).targetUser;
   } else {
-    user = (
-      (interaction as CommandInteraction).options as FixedOptions
-    ).getUser('user');
+    user = ((interaction as CommandInteraction).options as FixedOptions).getUser("user");
   }
-  const file = fs.readFileSync('./stats.html', 'utf-8');
+  const file = fs.readFileSync("./stats.html", "utf-8");
 
   if (!user) {
     return interaction.editReply({
-      content: 'No user found.',
+      content: "No user found.",
     });
   }
 
@@ -318,11 +291,11 @@ async function statUser(
 
   if (!saluteUser) {
     return interaction.editReply({
-      content: 'No salutes found.',
+      content: "No salutes found.",
     });
   }
 
-  let subTime = 'None';
+  let subTime = "None";
   let slottedCoins = 0;
 
   if (saluteUser.activeKey) {
@@ -330,11 +303,9 @@ async function statUser(
       where: { key: saluteUser.activeKey },
     });
     if (key) {
-      const days = parseInt(
-        diffDays(key.expirationDate, new Date()).toFixed(0)
-      );
+      const days = parseInt(diffDays(key.expirationDate, new Date()).toFixed(0));
       if (days > 500) {
-        subTime = 'Lifetime';
+        subTime = "Lifetime";
       } else {
         subTime = diffText(key.expirationDate, new Date());
       }
@@ -356,30 +327,28 @@ async function statUser(
   await member?.user.fetch();
 
   await nodeHtmlToImage({
-    output: './assets/stats.png',
+    output: "./assets/stats.png",
     html: file,
     puppeteerArgs: {
       headless: true,
-      args: ['--no-sandbox'],
+      args: ["--no-sandbox"],
       defaultViewport: {
         width: 800,
         height: 1000,
       },
     },
-    type: 'png',
+    type: "png",
     transparent: true,
     handlebarsHelpers: {},
     content: {
       user: {
         avatarUrl: member!.displayAvatarURL({
-          extension: 'png',
+          extension: "png",
           size: 4096,
         }),
         nickname: user.displayName,
         username: user.username,
-        banner:
-          member!.displayBannerURL({ extension: 'webp', size: 4096 }) ??
-          'https://zipline.sephiran.com/u/Tx4KlZ.gif',
+        banner: member!.displayBannerURL({ extension: "webp", size: 4096 }) ?? "https://zipline.sephiran.com/u/Tx4KlZ.gif",
         total,
         normal,
         rare,
@@ -392,12 +361,9 @@ async function statUser(
     },
   } as FixedImageOptions);
 
-  const attachment = new AttachmentBuilder('./assets/stats.png');
+  const attachment = new AttachmentBuilder("./assets/stats.png");
 
-  const embed = new EmbedBuilder()
-    .setTitle('Here are the stats you requested.')
-    .setColor('#601499')
-    .setImage('attachment://stats.png');
+  const embed = new EmbedBuilder().setTitle("Here are the stats you requested.").setColor("#601499").setImage("attachment://stats.png");
 
   return interaction.editReply({
     embeds: [embed],

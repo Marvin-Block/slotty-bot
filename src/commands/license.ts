@@ -1,14 +1,14 @@
-import { PrismaClient } from '@prisma/client';
-import { CommandInteraction, EmbedBuilder, Guild, InteractionContextType, MessageFlags, SlashCommandBuilder, time, TimestampStyles } from 'discord.js';
-import { fetchLicenseInfo } from '../helper/api';
-import { diffDays, diffHours, diffText } from '../helper/dates';
-import { getEmote } from '../helper/getEmote';
-import { logger } from '../helper/logger';
-import { FixedOptions } from '../typeFixes';
+import { PrismaClient } from "@prisma/client";
+import { CommandInteraction, EmbedBuilder, Guild, InteractionContextType, MessageFlags, SlashCommandBuilder, time, TimestampStyles } from "discord.js";
+import { fetchLicenseInfo } from "../helper/api";
+import { diffDays, diffHours, diffText } from "../helper/dates";
+import { getEmote } from "../helper/getEmote";
+import { logger } from "../helper/logger";
+import { FixedOptions, LicenseInfo } from "../typeFixes";
 
-const emoteGold = getEmote('<a:gold_slotted_gif:1351793834681565214>').fullString;
-const emoteAlert = getEmote('<a:alert:1365290359072100423>').fullString;
-const emoteWarng = getEmote('<a:warng:1365290361076977805>').fullString;
+const emoteGold = getEmote("<a:gold_slotted_gif:1351793834681565214>").fullString;
+const emoteAlert = getEmote("<a:alert:1365290359072100423>").fullString;
+const emoteWarng = getEmote("<a:warng:1365290361076977805>").fullString;
 
 const prisma = new PrismaClient();
 const reminderText = {
@@ -26,37 +26,37 @@ const cooldown = 1000 * 60 * 1; // 1 Minute cooldown
 const cooldownCollection = new Map();
 const keyReg = /^([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}$/;
 
-export const type = 'slash';
-export const name = 'license';
-export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+export const type = "slash";
+export const name = "license";
+export const allowed_servers = ["1074973203249770538", "1300479915308613702"];
 
-const roleId = '1341879803254411315';
+const roleId = "1341879803254411315";
 
 export const data = new SlashCommandBuilder()
-  .setName('license')
-  .setDescription('Manage your licenses')
+  .setName("license")
+  .setDescription("Manage your licenses")
   .setContexts(InteractionContextType.Guild)
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('link')
-      .setDescription('Links your slotted key to your discord account')
-      .addStringOption((option) => option.setName('key').setDescription('The key you want to link to your discord account').setRequired(true))
+      .setName("link")
+      .setDescription("Links your slotted key to your discord account")
+      .addStringOption((option) => option.setName("key").setDescription("The key you want to link to your discord account").setRequired(true))
   )
-  .addSubcommand((subcommand) => subcommand.setName('list').setDescription('Lists all your linked keys'))
-  .addSubcommand((subcommand) => subcommand.setName('info').setDescription('Shows information about your active key'));
+  .addSubcommand((subcommand) => subcommand.setName("list").setDescription("Lists all your linked keys"))
+  .addSubcommand((subcommand) => subcommand.setName("info").setDescription("Shows information about your active key"));
 
 export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   switch (subcommand) {
-    case 'link':
+    case "link":
       await linkLicense(interaction, options);
       break;
-    case 'list':
+    case "list":
       await listLicenses(interaction);
       break;
-    case 'info':
+    case "info":
       await getLicenseInfo(interaction);
       break;
   }
@@ -65,7 +65,7 @@ export async function execute(interaction: CommandInteraction) {
 async function linkLicense(interaction: CommandInteraction, options: FixedOptions) {
   try {
     logger.info(`Attempting to link license key to user ${interaction.user.id}`);
-    if (cooldownCollection.has(interaction.user.id) || Date.now() < cooldownCollection.get(interaction.user.id)) {
+    if (cooldownCollection.has(interaction.user.id) && Date.now() < cooldownCollection.get(interaction.user.id)) {
       logger.info(`User is still under cooldown`);
       await prisma.$disconnect();
       return interaction.editReply(
@@ -76,21 +76,21 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       );
     }
 
-    cooldownCollection.set(interaction.user.id, new Date(Date.now() + cooldown));
+    cooldownCollection.set(interaction.user.id, new Date(new Date().getTime() + cooldown));
 
-    const key = options.getString('key');
+    const key = options.getString("key");
     if (!key) {
-      logger.error('Interaction option key not found');
+      logger.error("Interaction option key not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occurred, please contact the support.',
+        content: "An error occurred, please contact the support.",
       });
     }
     if (!keyReg.test(key)) {
       logger.error(`Invalid key format ${key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'The key you provided is not valid.',
+        content: "The key you provided is not valid.",
       });
     }
     logger.info(`Linking license key ${key}`);
@@ -100,35 +100,38 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       logger.error(`API error with ${key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
 
-    if (!license.active) {
-      await prisma.$disconnect();
-      logger.error(`${key} is no longer active`);
-      return interaction.editReply({
-        content: 'The key you provided is no longer active.',
-      });
-    }
+    if (!license.dateActivated === null || license.daysValid <= 0) {
+      if (!license.active) {
+        await prisma.$disconnect();
+        logger.error(`${key} is no longer active`);
+        return interaction.editReply({
+          content: "The key you provided is no longer active.",
+        });
+      }
 
-    if (!license.valid) {
-      logger.error(`${key} is no longer valid`);
-      await prisma.$disconnect();
-      return interaction.editReply({
-        content: 'The key you provided is no longer valid.',
-      });
+      if (!license.valid) {
+        logger.error(`${key} is no longer valid`);
+        await prisma.$disconnect();
+        return interaction.editReply({
+          content: "The key you provided is no longer valid.",
+        });
+      }
     }
 
     const dbKey = await prisma.key.findUnique({
       where: { key },
+      include: { user: true },
     });
 
-    if (dbKey) {
+    if (dbKey && dbKey.user.discordID !== interaction.user.id) {
       logger.error(`${key} is already linked to another user`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'The key you provided is already linked to another user.',
+        content: "The key you provided is already linked to another user.",
       });
     }
 
@@ -140,12 +143,21 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       update: {
         activeKey: key,
         keys: {
-          create: {
-            key,
-            active: license.active,
-            valid: license.valid,
-            activationDate: new Date(license.dateActivated),
-            expirationDate: licenseEndDate,
+          upsert: {
+            where: { key },
+            update: {
+              active: license.active,
+              valid: license.valid,
+              activationDate: new Date(license.dateActivated),
+              expirationDate: licenseEndDate,
+            },
+            create: {
+              key,
+              active: license.active,
+              valid: license.valid,
+              activationDate: new Date(license.dateActivated),
+              expirationDate: licenseEndDate,
+            },
           },
         },
       },
@@ -173,7 +185,7 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       logger.error(`Error linking license key ${key} to user ${interaction.user.id}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'There was an error trying to link the key to your account, please contact the support.',
+        content: "There was an error trying to link the key to your account, please contact the support.",
       });
     }
 
@@ -184,13 +196,15 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
     await prisma.$disconnect();
 
     return interaction.editReply({
-      content: `\`${key}\` is now linked to your account.\nYour license key will expire ${time(licenseEndDate, TimestampStyles.RelativeTime)}.`,
+      content: `\`${key}\` is now linked to your account.\nYour license key will expire ${
+        license.dateActivated === null ? `${license.daysValid} Days after activation` : `in ${diffText(licenseEndDate, new Date())}`
+      }.`,
     });
   } catch (e) {
     logger.error(e);
     await prisma.$disconnect();
     return interaction.editReply({
-      content: 'An error occured, please contact the support.',
+      content: "An error occured, please contact the support.",
     });
   }
 }
@@ -200,10 +214,10 @@ async function listLicenses(interaction: CommandInteraction) {
     logger.info(`Listing licenses for user ${interaction.user.id}`);
     const success = await updateLicenseInfo(interaction.guild!);
     if (!success) {
-      logger.error('Error updating license info');
+      logger.error("Error updating license info");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
 
@@ -213,10 +227,10 @@ async function listLicenses(interaction: CommandInteraction) {
     });
 
     if (!user) {
-      logger.error('User not found');
+      logger.error("User not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occurred, please contact the support.',
+        content: "An error occurred, please contact the support.",
       });
     }
 
@@ -224,7 +238,7 @@ async function listLicenses(interaction: CommandInteraction) {
       logger.error(`No licenses found for user ${interaction.user.id}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'There are no licenses linked to your account yet.',
+        content: "There are no licenses linked to your account yet.",
       });
     }
 
@@ -240,15 +254,10 @@ async function listLicenses(interaction: CommandInteraction) {
       valid: boolean;
       activationDate: Date;
       expirationDate: Date;
+      license?: LicenseInfo;
     }[] = [];
 
     for (const key of keys) {
-      if (key.updatedAt > new Date(Date.now() - 1000 * 60 * 10)) {
-        logger.debug(`last update ${key.updatedAt.toISOString()}, ${new Date(Date.now() - 1000 * 60 * 5).toISOString()}`);
-        logger.info(`Key ${key.key} was updated recently, skipping`);
-        updatedKeys.push(key);
-        continue;
-      }
       const license = await fetchLicenseInfo(key.key);
       if (!license) {
         logger.error(`API error with ${key.key}`);
@@ -271,19 +280,26 @@ async function listLicenses(interaction: CommandInteraction) {
 
       logger.info(`${key.key} has been updated`);
 
-      updatedKeys.push(newKey);
+      updatedKeys.push({ ...newKey, license });
     }
 
-    let embedDescription = '';
+    let embedDescription = "";
     updatedKeys.forEach((key) => {
       embedDescription += `**License #${key.id}**\n`;
-      embedDescription += '├ Key: `' + key.key + '`\n';
-      embedDescription += `├ Expires in: ${diffText(key.expirationDate, new Date())}\n`;
-      embedDescription += `├ Activation Time: ${time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
-      embedDescription += `└ Status: ${key.active ? '**Active**' : '**Inactive**'}\n\n`;
+      embedDescription += "├ Key: `" + key.key + "`\n";
+      if (key.license) {
+        embedDescription += `├ Expires${
+          key.license.dateActivated === null ? `: ${key.license.daysValid} Days after activation` : `in: ${diffText(key.expirationDate, new Date())}`
+        }\n`;
+        embedDescription += `├ Activation Time: ${key.license.dateActivated === null ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
+      } else {
+        embedDescription += `├ Expires in: ${diffText(key.expirationDate, new Date())}\n`;
+        embedDescription += `├ Activation Time: ${time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
+      }
+      embedDescription += `└ Status: ${key.active ? "**Active**" : "**Inactive**"}\n\n`;
     });
 
-    const embed = new EmbedBuilder().setTitle('Slotted Key Manager').setDescription(embedDescription).setColor('#500de0');
+    const embed = new EmbedBuilder().setTitle("Slotted Key Manager").setDescription(embedDescription).setColor("#500de0");
 
     await prisma.$disconnect();
     return interaction.editReply({
@@ -293,7 +309,7 @@ async function listLicenses(interaction: CommandInteraction) {
     logger.error(error);
     await prisma.$disconnect();
     return interaction.editReply({
-      content: 'An error occured, please contact the support.',
+      content: "An error occured, please contact the support.",
     });
   }
 }
@@ -303,10 +319,10 @@ async function getLicenseInfo(interaction: CommandInteraction) {
     logger.info(`License info for user ${interaction.user.id}`);
     const success = await updateLicenseInfo(interaction.guild!);
     if (!success) {
-      logger.error('Error updating license info');
+      logger.error("Error updating license info");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
 
@@ -316,10 +332,10 @@ async function getLicenseInfo(interaction: CommandInteraction) {
     });
 
     if (!user) {
-      logger.error('User not found');
+      logger.error("User not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
 
@@ -329,7 +345,7 @@ async function getLicenseInfo(interaction: CommandInteraction) {
       logger.error(`No active license found for user ${interaction.user.id}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'There is no active license linked to your account yet.',
+        content: "There is no active license linked to your account yet.",
       });
     } else if (!user.activeKey && useableKey) {
       logger.info(`User ${interaction.user.id} has a useable key but no active key`);
@@ -352,7 +368,7 @@ async function getLicenseInfo(interaction: CommandInteraction) {
       logger.error(`No active license found for user ${interaction.user.id}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'There is no active license linked to your account yet.',
+        content: "There is no active license linked to your account yet.",
       });
     }
 
@@ -361,7 +377,7 @@ async function getLicenseInfo(interaction: CommandInteraction) {
       logger.error(`API error with ${activeKey.key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: 'An error occured, please contact the support.',
+        content: "An error occured, please contact the support.",
       });
     }
     const licenseEndDate = new Date(newLicense.dateActivated);
@@ -378,48 +394,52 @@ async function getLicenseInfo(interaction: CommandInteraction) {
     });
     logger.info(`${activeKey.key} has been updated`);
 
-    let embedDescription = '';
+    let embedDescription = "";
     embedDescription += `**License #${activeKey.id}**\n`;
-    embedDescription += '├ Key: `' + activeKey.key + '`\n';
-    embedDescription += `├ Expires in: ${diffText(licenseEndDate, new Date())}\n`;
-    embedDescription += `├ Activation Time: ${time(activeKey.activationDate, TimestampStyles.ShortDateTime)}\n`;
-    embedDescription += `└ Status: ${activeKey.active ? '**Active**' : 'Inactive'}\n\n`;
+    embedDescription += "├ Key: `" + activeKey.key + "`\n";
+    embedDescription += `├ Expires${
+      newLicense.dateActivated === null ? `: ${newLicense.daysValid} Days after activation` : `in: ${diffText(licenseEndDate, new Date())}`
+    }\n`;
+    embedDescription += `├ Activation Time: ${
+      activeKey.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(activeKey.activationDate, TimestampStyles.ShortDateTime)
+    }\n`;
+    embedDescription += `└ Status: ${activeKey.active ? "**Active**" : "Inactive"}\n\n`;
 
-    const embed = new EmbedBuilder().setTitle('Slotted Key Manager').setDescription(embedDescription).setColor('#500de0');
+    const embed = new EmbedBuilder().setTitle("Slotted Key Manager").setDescription(embedDescription).setColor("#500de0");
 
     await prisma.$disconnect();
     return interaction.editReply({
-      content: 'Here is your license info:',
+      content: "Here is your license info:",
       embeds: [embed],
     });
   } catch (error) {
-    logger.error(error, 'Error getting license info');
+    logger.error(error, "Error getting license info");
     await prisma.$disconnect();
     return interaction.editReply({
-      content: 'An error occured, please contact the support.',
+      content: "An error occured, please contact the support.",
     });
   }
 }
 
 export async function updateLicenseInfo(guild: Guild) {
   if (!guild) {
-    logger.error('Guild not found');
+    logger.error("Guild not found");
     return false;
   }
   await guild.fetch();
   try {
-    logger.info('Updating license info');
+    logger.info("Updating license info");
     const key = await prisma.key.findMany({
       where: { active: true, valid: true },
       include: { user: true },
     });
     if (key.length < 1) {
-      logger.info('No updateable keys found');
+      logger.info("No updateable keys found");
       const users = await prisma.user.findMany({
         where: { activeKey: { not: null } },
       });
       if (users.length < 1) {
-        logger.info('No users with invalid active keys found');
+        logger.info("No users with invalid active keys found");
         await prisma.$disconnect();
         return true;
       } else {
@@ -582,10 +602,10 @@ export async function updateLicenseInfo(guild: Guild) {
     }
 
     await prisma.$disconnect();
-    logger.info('Licenses and Users updated');
+    logger.info("Licenses and Users updated");
     return true;
   } catch (error) {
-    logger.error(error, 'Error updating license info');
+    logger.error(error, "Error updating license info");
     await prisma.$disconnect();
     return false;
   }
@@ -596,23 +616,23 @@ export async function giveRole(guild: Guild, userId: string) {
   await member?.user.fetch();
   try {
     if (!member) {
-      logger.error('Member not found');
+      logger.error("Member not found");
       return false;
     }
     const role = guild.roles.cache.get(roleId);
     if (!role) {
-      logger.error('Role not found');
+      logger.error("Role not found");
       return false;
     }
     if (member.roles.cache.has(roleId)) {
-      logger.error('User already has the role');
+      logger.error("User already has the role");
       return false;
     }
     await member.roles.add(role);
-    logger.info('Role added to user');
+    logger.info("Role added to user");
     return true;
   } catch (error) {
-    logger.error(error, 'Error adding role to user');
+    logger.error(error, "Error adding role to user");
     return false;
   }
 }
@@ -622,23 +642,23 @@ async function removeRole(guild: Guild, userId: string) {
   await member?.user.fetch();
   try {
     if (!member) {
-      logger.error('Member not found');
+      logger.error("Member not found");
       return false;
     }
     const role = guild.roles.cache.get(roleId);
     if (!role) {
-      logger.error('Role not found');
+      logger.error("Role not found");
       return false;
     }
     if (!member.roles.cache.has(roleId)) {
-      logger.info('User doesnt have the role');
+      logger.info("User doesnt have the role");
       return false;
     }
     await member.roles.remove(role);
     logger.info(`Role removed from user ${userId} since the key is no longer active`);
     return true;
   } catch (error) {
-    logger.error(error, 'Error removing role from user');
+    logger.error(error, "Error removing role from user");
     return false;
   }
 }
@@ -649,15 +669,15 @@ async function subtimeReminder(guild: Guild, userId: string, message: string) {
     const user = await client.users.fetch(userId);
 
     if (!user) {
-      logger.error('User not found');
+      logger.error("User not found");
       return;
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('Slotted Key Manager')
+      .setTitle("Slotted Key Manager")
       .setDescription(message)
-      .setColor('#500de0')
-      .setFooter({ text: 'This is an automated message, please do not reply.' })
+      .setColor("#500de0")
+      .setFooter({ text: "This is an automated message, please do not reply." })
       .setTimestamp();
 
     await user
@@ -674,11 +694,11 @@ async function subtimeReminder(guild: Guild, userId: string, message: string) {
         await prisma.$disconnect();
       })
       .catch(async (error) => {
-        logger.error(error, 'Error sending reminder');
+        logger.error(error, "Error sending reminder");
         await prisma.$disconnect();
       });
   } catch (error) {
-    logger.error(error, 'Error sending reminder');
+    logger.error(error, "Error sending reminder");
   }
 }
 
@@ -691,5 +711,5 @@ export async function updateLicenseInfoCron(guild: Guild) {
   setTimeout(() => {
     updateLicenseInfoCron(guild);
   }, msToNextRoundedMinute);
-  logger.info('Next update in ' + msToNextRoundedMinute / 1000 + ' seconds');
+  logger.info("Next update in " + msToNextRoundedMinute / 1000 + " seconds");
 }
