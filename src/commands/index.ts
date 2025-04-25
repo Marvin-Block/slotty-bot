@@ -1,3 +1,4 @@
+import * as admin from './admin';
 import * as blacklist from './blacklist';
 import * as bookmark from './bookmark';
 import * as crypto from './crypto';
@@ -15,6 +16,7 @@ import * as verify from './verify';
 import * as wallet from './wallet';
 
 export const commands = {
+  admin,
   license,
   // users,
   // keys,

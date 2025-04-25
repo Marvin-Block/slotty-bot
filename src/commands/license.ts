@@ -401,7 +401,7 @@ async function getLicenseInfo(interaction: CommandInteraction) {
   }
 }
 
-async function updateLicenseInfo(guild: Guild) {
+export async function updateLicenseInfo(guild: Guild) {
   if (!guild) {
     logger.error('Guild not found');
     return false;
@@ -591,7 +591,7 @@ async function updateLicenseInfo(guild: Guild) {
   }
 }
 
-async function giveRole(guild: Guild, userId: string) {
+export async function giveRole(guild: Guild, userId: string) {
   const member = await guild.members.fetch(userId);
   await member?.user.fetch();
   try {
