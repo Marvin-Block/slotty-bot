@@ -1,21 +1,27 @@
 import { PrismaClient } from '@prisma/client';
-import {
-  CommandInteraction,
-  EmbedBuilder,
-  Guild,
-  InteractionContextType,
-  MessageFlags,
-  SlashCommandBuilder,
-  time,
-  TimestampStyles,
-} from 'discord.js';
+import { CommandInteraction, EmbedBuilder, Guild, InteractionContextType, MessageFlags, SlashCommandBuilder, time, TimestampStyles } from 'discord.js';
 import { fetchLicenseInfo } from '../helper/api';
-import { diffText } from '../helper/dates';
+import { diffDays, diffHours, diffText } from '../helper/dates';
+import { getEmote } from '../helper/getEmote';
 import { logger } from '../helper/logger';
 import { FixedOptions } from '../typeFixes';
 
-const prisma = new PrismaClient();
+const emoteGold = getEmote('<a:gold_slotted_gif:1351793834681565214>').fullString;
+const emoteAlert = getEmote('<a:alert:1365290359072100423>').fullString;
+const emoteWarng = getEmote('<a:warng:1365290361076977805>').fullString;
 
+const prisma = new PrismaClient();
+const reminderText = {
+  expired: `-# ${emoteGold} LEAGUE OF LEGENDS INTERNAL
+# Your license has expired ${emoteAlert}
+-# To renew your license create a [purchase ticket](https://discord.com/channels/1300479915308613702/1330889242691502150/1330889548883820655).`,
+  oneDay: `-# ${emoteGold} LEAGUE OF LEGENDS INTERNAL
+# Your license expires in 24 hours ${emoteWarng} 
+-# To renew your license create a [purchase ticket](https://discord.com/channels/1300479915308613702/1330889242691502150/1330889548883820655).`,
+  threeDays: `-# ${emoteGold} LEAGUE OF LEGENDS INTERNAL:
+# Your license expires in 3 days ⚠️ 
+-# To renew your license create a [purchase ticket](https://discord.com/channels/1300479915308613702/1330889242691502150/1330889548883820655).`,
+};
 const cooldown = 1000 * 60 * 1; // 1 Minute cooldown
 const cooldownCollection = new Map();
 const keyReg = /^([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}$/;
@@ -34,21 +40,10 @@ export const data = new SlashCommandBuilder()
     subcommand
       .setName('link')
       .setDescription('Links your slotted key to your discord account')
-      .addStringOption((option) =>
-        option
-          .setName('key')
-          .setDescription('The key you want to link to your discord account')
-          .setRequired(true)
-      )
+      .addStringOption((option) => option.setName('key').setDescription('The key you want to link to your discord account').setRequired(true))
   )
-  .addSubcommand((subcommand) =>
-    subcommand.setName('list').setDescription('Lists all your linked keys')
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('info')
-      .setDescription('Shows information about your active key')
-  );
+  .addSubcommand((subcommand) => subcommand.setName('list').setDescription('Lists all your linked keys'))
+  .addSubcommand((subcommand) => subcommand.setName('info').setDescription('Shows information about your active key'));
 
 export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as FixedOptions;
@@ -67,18 +62,10 @@ export async function execute(interaction: CommandInteraction) {
   }
 }
 
-async function linkLicense(
-  interaction: CommandInteraction,
-  options: FixedOptions
-) {
+async function linkLicense(interaction: CommandInteraction, options: FixedOptions) {
   try {
-    logger.info(
-      `Attempting to link license key to user ${interaction.user.id}`
-    );
-    if (
-      cooldownCollection.has(interaction.user.id) ||
-      Date.now() < cooldownCollection.get(interaction.user.id)
-    ) {
+    logger.info(`Attempting to link license key to user ${interaction.user.id}`);
+    if (cooldownCollection.has(interaction.user.id) || Date.now() < cooldownCollection.get(interaction.user.id)) {
       logger.info(`User is still under cooldown`);
       await prisma.$disconnect();
       return interaction.editReply(
@@ -89,10 +76,7 @@ async function linkLicense(
       );
     }
 
-    cooldownCollection.set(
-      interaction.user.id,
-      new Date(Date.now() + cooldown)
-    );
+    cooldownCollection.set(interaction.user.id, new Date(Date.now() + cooldown));
 
     const key = options.getString('key');
     if (!key) {
@@ -186,13 +170,10 @@ async function linkLicense(
     });
 
     if (!updatedUser) {
-      logger.error(
-        `Error linking license key ${key} to user ${interaction.user.id}`
-      );
+      logger.error(`Error linking license key ${key} to user ${interaction.user.id}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content:
-          'There was an error trying to link the key to your account, please contact the support.',
+        content: 'There was an error trying to link the key to your account, please contact the support.',
       });
     }
 
@@ -203,10 +184,7 @@ async function linkLicense(
     await prisma.$disconnect();
 
     return interaction.editReply({
-      content: `\`${key}\` is now linked to your account.\nYour license key will expire ${time(
-        licenseEndDate,
-        TimestampStyles.RelativeTime
-      )}.`,
+      content: `\`${key}\` is now linked to your account.\nYour license key will expire ${time(licenseEndDate, TimestampStyles.RelativeTime)}.`,
     });
   } catch (e) {
     logger.error(e);
@@ -266,11 +244,7 @@ async function listLicenses(interaction: CommandInteraction) {
 
     for (const key of keys) {
       if (key.updatedAt > new Date(Date.now() - 1000 * 60 * 10)) {
-        logger.debug(
-          `last update ${key.updatedAt.toISOString()}, ${new Date(
-            Date.now() - 1000 * 60 * 5
-          ).toISOString()}`
-        );
+        logger.debug(`last update ${key.updatedAt.toISOString()}, ${new Date(Date.now() - 1000 * 60 * 5).toISOString()}`);
         logger.info(`Key ${key.key} was updated recently, skipping`);
         updatedKeys.push(key);
         continue;
@@ -304,23 +278,12 @@ async function listLicenses(interaction: CommandInteraction) {
     updatedKeys.forEach((key) => {
       embedDescription += `**License #${key.id}**\n`;
       embedDescription += '├ Key: `' + key.key + '`\n';
-      embedDescription += `├ Expires in: ${diffText(
-        key.expirationDate,
-        new Date()
-      )}\n`;
-      embedDescription += `├ Activation Time: ${time(
-        key.activationDate,
-        TimestampStyles.ShortDateTime
-      )}\n`;
-      embedDescription += `└ Status: ${
-        key.active ? '**Active**' : '**Inactive**'
-      }\n\n`;
+      embedDescription += `├ Expires in: ${diffText(key.expirationDate, new Date())}\n`;
+      embedDescription += `├ Activation Time: ${time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
+      embedDescription += `└ Status: ${key.active ? '**Active**' : '**Inactive**'}\n\n`;
     });
 
-    const embed = new EmbedBuilder()
-      .setTitle('Slotted Key Manager')
-      .setDescription(embedDescription)
-      .setColor('#500de0');
+    const embed = new EmbedBuilder().setTitle('Slotted Key Manager').setDescription(embedDescription).setColor('#500de0');
 
     await prisma.$disconnect();
     return interaction.editReply({
@@ -360,9 +323,7 @@ async function getLicenseInfo(interaction: CommandInteraction) {
       });
     }
 
-    const useableKey = user.keys.find(
-      (key) => key.active && key.valid && key.expirationDate > new Date()
-    );
+    const useableKey = user.keys.find((key) => key.active && key.valid && key.expirationDate > new Date());
 
     if (!user.activeKey && !useableKey) {
       logger.error(`No active license found for user ${interaction.user.id}`);
@@ -371,9 +332,7 @@ async function getLicenseInfo(interaction: CommandInteraction) {
         content: 'There is no active license linked to your account yet.',
       });
     } else if (!user.activeKey && useableKey) {
-      logger.info(
-        `User ${interaction.user.id} has a useable key but no active key`
-      );
+      logger.info(`User ${interaction.user.id} has a useable key but no active key`);
       await prisma.user.update({
         where: { discordID: interaction.user.id },
         data: { activeKey: useableKey.key },
@@ -422,22 +381,11 @@ async function getLicenseInfo(interaction: CommandInteraction) {
     let embedDescription = '';
     embedDescription += `**License #${activeKey.id}**\n`;
     embedDescription += '├ Key: `' + activeKey.key + '`\n';
-    embedDescription += `├ Expires in: ${diffText(
-      licenseEndDate,
-      new Date()
-    )}\n`;
-    embedDescription += `├ Activation Time: ${time(
-      activeKey.activationDate,
-      TimestampStyles.ShortDateTime
-    )}\n`;
-    embedDescription += `└ Status: ${
-      activeKey.active ? '**Active**' : 'Inactive'
-    }\n\n`;
+    embedDescription += `├ Expires in: ${diffText(licenseEndDate, new Date())}\n`;
+    embedDescription += `├ Activation Time: ${time(activeKey.activationDate, TimestampStyles.ShortDateTime)}\n`;
+    embedDescription += `└ Status: ${activeKey.active ? '**Active**' : 'Inactive'}\n\n`;
 
-    const embed = new EmbedBuilder()
-      .setTitle('Slotted Key Manager')
-      .setDescription(embedDescription)
-      .setColor('#500de0');
+    const embed = new EmbedBuilder().setTitle('Slotted Key Manager').setDescription(embedDescription).setColor('#500de0');
 
     await prisma.$disconnect();
     return interaction.editReply({
@@ -480,13 +428,9 @@ async function updateLicenseInfo(guild: Guild) {
             where: { discordID: u.discordID },
             data: { activeKey: null },
           });
-          logger.info(
-            `User ${u.discordID} has been updated to remove the invalid active key`
-          );
+          logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
           await removeRole(guild, u.discordID);
-          logger.info(
-            `Role has been removed from user ${u.discordID} since the key is no longer active`
-          );
+          logger.info(`Role has been removed from user ${u.discordID} since the key is no longer active`);
         }
       }
       await prisma.$disconnect();
@@ -495,11 +439,7 @@ async function updateLicenseInfo(guild: Guild) {
     for (const k of key) {
       // update keys in 10 minutes intervals
       if (k.updatedAt > new Date(Date.now() - 1000 * 60 * 10)) {
-        logger.debug(
-          `last update ${k.updatedAt.toISOString()}, ${new Date(
-            Date.now() - 1000 * 60 * 5
-          ).toISOString()}`
-        );
+        logger.debug(`last update ${k.updatedAt.toISOString()}, ${new Date(Date.now() - 1000 * 60 * 5).toISOString()}`);
         logger.info(`Key ${k.key} was updated recently, skipping`);
         continue;
       }
@@ -526,13 +466,10 @@ async function updateLicenseInfo(guild: Guild) {
             where: { discordID: k.user.discordID },
             data: { activeKey: null },
           });
-          logger.info(
-            `${k.key} has been removed from user ${k.user.discordID} since it is no longer active`
-          );
+          logger.info(`${k.key} has been removed from user ${k.user.discordID} since it is no longer active`);
           await removeRole(guild, k.user.discordID);
-          logger.info(
-            `Role hase been removed since the key is no longer active`
-          );
+          logger.info(`Role hase been removed since the key is no longer active`);
+          await subtimeReminder(guild, k.user.discordID, reminderText.expired);
         }
         continue;
       }
@@ -553,13 +490,10 @@ async function updateLicenseInfo(guild: Guild) {
             where: { discordID: k.user.discordID },
             data: { activeKey: null },
           });
-          logger.info(
-            `${k.key} has been removed from user ${k.user.discordID} since it is no longer valid`
-          );
+          logger.info(`${k.key} has been removed from user ${k.user.discordID} since it is no longer valid`);
           await removeRole(guild, k.user.discordID);
-          logger.info(
-            `Role hase been removed since the key is no longer active`
-          );
+          logger.info(`Role hase been removed since the key is no longer active`);
+          await subtimeReminder(guild, k.user.discordID, reminderText.expired);
         }
         continue;
       }
@@ -581,9 +515,7 @@ async function updateLicenseInfo(guild: Guild) {
     });
 
     for (const u of users) {
-      const useableKey = u.keys.find(
-        (key) => key.active && key.valid && key.expirationDate > new Date()
-      );
+      const useableKey = u.keys.find((key) => key.active && key.valid && key.expirationDate > new Date());
 
       if (!u.activeKey && useableKey) {
         logger.info(`User ${u.discordID} has a useable key but no active key`);
@@ -599,16 +531,53 @@ async function updateLicenseInfo(guild: Guild) {
 
       const hasKey = u.keys.find((k) => k.key === u.activeKey);
       if (u.activeKey && !hasKey) {
-        logger.info(
-          `User ${u.discordID} has been updated to remove the invalid active key`
-        );
         await prisma.user.update({
           where: { discordID: u.discordID },
           data: { activeKey: null },
         });
+        logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
         await removeRole(guild, u.discordID);
         logger.info(`Role hase been removed since the key is no longer active`);
+        await subtimeReminder(guild, u.discordID, reminderText.expired);
         continue;
+      }
+    }
+
+    const usersWithActiveKeys = await prisma.user.findMany({
+      include: { keys: true },
+      where: {
+        keys: {
+          some: {
+            active: true,
+            valid: true,
+            expirationDate: {
+              gte: new Date(),
+            },
+          },
+        },
+      },
+    });
+
+    for (const user of usersWithActiveKeys) {
+      const key = user.keys
+        .filter((key) => {
+          if (!key.active) return false;
+          return true;
+        })
+        .at(0);
+      if (!key) continue;
+
+      const hoursSinceReminder = parseInt(diffHours(user.lastSubtimeReminder, new Date()).toFixed(1));
+      const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
+      logger.debug(`${hoursSinceReminder} hours since last reminder`);
+      if (hoursSinceReminder > 18) continue;
+      logger.debug(`${daysLeft} days left`);
+      if (daysLeft == 0) {
+        logger.debug(`User ${user.discordID} has less than a day on their key`);
+        await subtimeReminder(guild, user.discordID, reminderText.oneDay);
+      } else if (daysLeft == 2) {
+        logger.debug(`User ${user.discordID} has less than three days on their key`);
+        await subtimeReminder(guild, user.discordID, reminderText.threeDays);
       }
     }
 
@@ -666,13 +635,50 @@ async function removeRole(guild: Guild, userId: string) {
       return false;
     }
     await member.roles.remove(role);
-    logger.info(
-      `Role removed from user ${userId} since the key is no longer active`
-    );
+    logger.info(`Role removed from user ${userId} since the key is no longer active`);
     return true;
   } catch (error) {
     logger.error(error, 'Error removing role from user');
     return false;
+  }
+}
+
+async function subtimeReminder(guild: Guild, userId: string, message: string) {
+  try {
+    const client = guild.client;
+    const user = await client.users.fetch(userId);
+
+    if (!user) {
+      logger.error('User not found');
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('Slotted Key Manager')
+      .setDescription(message)
+      .setColor('#500de0')
+      .setFooter({ text: 'This is an automated message, please do not reply.' })
+      .setTimestamp();
+
+    await user
+      .send({
+        embeds: [embed],
+      })
+      .then(async () => {
+        logger.info(`Reminder sent to user ${userId}`);
+        await prisma.user.update({
+          where: { discordID: userId },
+          data: { lastSubtimeReminder: new Date() },
+        });
+        logger.info(`User ${userId} last reminder updated`);
+        await prisma.$disconnect();
+      })
+      .catch(async (error) => {
+        logger.error(error, 'Error sending reminder');
+        await prisma.$disconnect();
+      });
+  } catch (error) {
+    logger.error(error, 'Error sending reminder');
   }
 }
 
