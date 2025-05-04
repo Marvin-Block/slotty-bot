@@ -3,6 +3,7 @@ cereal 432586339263971329
 sx 846185075372720158
 muffin 322659763643088897
 alchenda 244274236338864128
+unsigned ling ling 1359246366043279660
 
 # ChannelId
 
@@ -33,7 +34,9 @@ alchenda 244274236338864128
 # Top Lane
 
 - **Aatrox** (Q, W, E, R) [Author: <@432586339263971329>]
+- **Darius** (Q, W, E, R) [Author: <@1359246366043279660>]
 - **Gwen** (Q, W, E, R) [Author: <@432586339263971329>]
+- **Irelia** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Jayce** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Mordekaiser** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
@@ -44,20 +47,21 @@ alchenda 244274236338864128
 - **Amumu** (Q, R) [Author: <@693972199727562793>]
 - **Diana** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Hecarim** (Q, W, E, R) [Author: <@432586339263971329>]
+- **Kindred** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Master Yi** (Q, W, E) [Author: <@244274236338864128>]
 - **Olaf** (Q, W, E, R) [Author: <@693972199727562793>]
+- **Talon** (Q, W, R) [Author: <@693972199727562793>]
 - **Wukong** (Q, W, E, R) [Author: <@693972199727562793>]
 
 # Mid Lane
 
-- **Ahri** (Q, W, E, R) [Author: <@693972199727562793>]
+- **Ahri** (Q, W, E, R) [Author: <@1359246366043279660>]
 - **Brand** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Cassiopeia** (Q, W, E, R) [Author: <@846185075372720158>]
 - **Corki** (Q, W, E, R) [Author: <@846185075372720158>]
 - **Kassadin** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Lux** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Orianna** (Q, W, E, R) [Author: <@322659763643088897>]
-- **Sylas** (Q, W, E) [Author: <@432586339263971329>]
 - **Swain** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Sylas** (Q, W, E) [Author: <@432586339263971329>]
 - **Syndra** (Q, W, E, R) [Author: <@693972199727562793>]
@@ -72,6 +76,7 @@ alchenda 244274236338864128
 
 # ADC
 
+- **Ashe** (Q, W, R) [Author: <@1359246366043279660>]
 - **Caitlyn** (Q, W, E) [Author: <@322659763643088897>]
 - **Ezreal** (Q, W, R) [Author: <@846185075372720158>, <@322659763643088897>]
 - **Jinx** (Q, W, E, R) [Author: <@693972199727562793>, <@846185075372720158>]
@@ -93,6 +98,7 @@ alchenda 244274236338864128
 - **Lulu** (Q, W, E, R) [Author: <@846185075372720158>]
 - **Morgana** (Q, W, E, R) [Author: <@432586339263971329>]
 - **Nami** (Q, W, E, R) [Author: <@693972199727562793>]
+- **Pyke** (Q, W, E, R) [Author: <@1359246366043279660>]
 - **Senna** (Q, W, E, R) [Author: <@846185075372720158>]
 - **Swain** (Q, W, E, R) [Author: <@693972199727562793>]
 - **Thresh** (Q, W, E, R) [Author: <@432586339263971329>]
