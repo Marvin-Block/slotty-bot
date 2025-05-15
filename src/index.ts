@@ -1,11 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import {
-  Client,
-  Collection,
-  Events,
-  MessageFlags,
-  PermissionsBitField,
-} from 'discord.js';
+import { Client, Collection, Events, MessageFlags, PermissionsBitField } from 'discord.js';
 import express from 'express';
 import { fetch } from 'undici';
 import { commands } from './commands';
@@ -18,13 +12,7 @@ import * as userEntry from './helper/createUserEntry';
 import { logger } from './helper/logger';
 import { SecureRandomGenerator } from './secure_random_number';
 import * as saluteGambling from './text-commands/salutegambling';
-import {
-  ConnectionResponseData,
-  ExtendedClient,
-  GuildResponseData,
-  TokenResponseData,
-  UserResponseData,
-} from './typeFixes';
+import { ConnectionResponseData, ExtendedClient, GuildResponseData, TokenResponseData, UserResponseData } from './typeFixes';
 
 const app = express();
 
@@ -84,6 +72,7 @@ client.on(Events.GuildAvailable, async (guild) => {
   reminder.handleReminder(guild);
   if (licenseAllowedGuilds.includes(guild.id)) {
     license.updateLicenseInfoCron(guild);
+    license.licenseBlackmailCron(guild);
   }
 });
 
@@ -212,8 +201,7 @@ app.get('/', async (req: express.Request, res: express.Response) => {
         throw new Error('Failed to fetch token. ');
       }
 
-      const tokenResponseData =
-        (await tokenResponse.json()) as TokenResponseData;
+      const tokenResponseData = (await tokenResponse.json()) as TokenResponseData;
 
       logger.info({ scope: tokenResponseData.scope });
 
@@ -264,8 +252,7 @@ app.get('/', async (req: express.Request, res: express.Response) => {
 
       logger.info('Guild response received');
 
-      const guildResponseData =
-        (await guildReponse.json()) as GuildResponseData[];
+      const guildResponseData = (await guildReponse.json()) as GuildResponseData[];
 
       const connectionResponse = await fetch(connectionsUrl, {
         headers: {
@@ -287,8 +274,7 @@ app.get('/', async (req: express.Request, res: express.Response) => {
 
       logger.info('Connection response received');
 
-      const connectionResponseData =
-        (await connectionResponse.json()) as ConnectionResponseData[];
+      const connectionResponseData = (await connectionResponse.json()) as ConnectionResponseData[];
 
       logger.info('Redirecting to slotted.cc & creating user');
       res.redirect('https://slotted.cc/');
@@ -318,9 +304,7 @@ app.get('/', async (req: express.Request, res: express.Response) => {
           token_type: tokenResponseData.token_type,
           access_token: tokenResponseData.access_token,
           refresh_token: tokenResponseData.refresh_token,
-          expires_at: new Date(
-            Date.now() + tokenResponseData.expires_in * 1000
-          ),
+          expires_at: new Date(Date.now() + tokenResponseData.expires_in * 1000),
           scope: tokenResponseData.scope,
           guilds: {
             createMany: {
@@ -332,9 +316,7 @@ app.get('/', async (req: express.Request, res: express.Response) => {
                   banner: guild.banner,
                   isOwner: guild.owner,
                   permissions: BigInt(guild.permissions),
-                  permissionsText: permissionNames(
-                    new PermissionsBitField(BigInt(guild.permissions))
-                  ).join(', '),
+                  permissionsText: permissionNames(new PermissionsBitField(BigInt(guild.permissions))).join(', '),
                 };
               }),
             },

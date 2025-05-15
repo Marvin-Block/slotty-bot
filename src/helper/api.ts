@@ -11,9 +11,7 @@ const baseOptions = {
   },
 };
 
-export async function fetchLicenseInfo(
-  key: string
-): Promise<LicenseInfo | null> {
+export async function fetchLicenseInfo(key: string): Promise<LicenseInfo | null> {
   const url = config.API_BASE_URL + 'license_info';
   const options = {
     ...baseOptions,
@@ -25,7 +23,15 @@ export async function fetchLicenseInfo(
   logger.info(`Fetching license info for ${key}`);
   const data = await fetch(url, options)
     .then((res) => res.json())
-    .then((res: LicenseInfo) => res)
+    .then((res: LicenseInfo) => {
+      if (!res.dateActivated) {
+        res.dateActivated = new Date(0).getMilliseconds().toString();
+      }
+      if (!res.daysValid) {
+        res.daysValid = 0;
+      }
+      return res;
+    })
     .catch((err: Error) => {
       logger.error(err, 'Error fetching license info:');
       return null;
