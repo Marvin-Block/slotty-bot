@@ -1,5 +1,15 @@
 import { PrismaClient } from '@prisma/client';
-import { CommandInteraction, EmbedBuilder, Guild, InteractionContextType, MessageFlags, SlashCommandBuilder, time, TimestampStyles } from 'discord.js';
+import {
+  CommandInteraction,
+  EmbedBuilder,
+  Guild,
+  InteractionContextType,
+  MessageFlags,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+  time,
+  TimestampStyles,
+} from 'discord.js';
 import { fetchLicenseInfo } from '../helper/api';
 import { diffDays, diffHours, diffText } from '../helper/dates';
 import { getEmote } from '../helper/getEmote';
@@ -31,6 +41,7 @@ export const name = 'license';
 export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
 
 const roleId = '1341879803254411315';
+const whitelistRoleId = '1354198468863856772';
 
 export const data = new SlashCommandBuilder()
   .setName('license')
@@ -455,8 +466,7 @@ export async function updateLicenseInfo(guild: Guild) {
             data: { activeKey: null },
           });
           logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
-          await removeRole(guild, u.discordID);
-          logger.info(`Role has been removed from user ${u.discordID} since the key is no longer active`);
+          await subtimeReminder(guild, u.discordID, reminderText.expired);
         }
       }
       await prisma.$disconnect();
@@ -495,8 +505,6 @@ export async function updateLicenseInfo(guild: Guild) {
             data: { activeKey: null },
           });
           logger.info(`${k.key} has been removed from user ${k.user.discordID} since it is no longer active`);
-          await removeRole(guild, k.user.discordID);
-          logger.info(`Role hase been removed since the key is no longer active`);
           await subtimeReminder(guild, k.user.discordID, reminderText.expired);
         }
         continue;
@@ -519,8 +527,6 @@ export async function updateLicenseInfo(guild: Guild) {
             data: { activeKey: null },
           });
           logger.info(`${k.key} has been removed from user ${k.user.discordID} since it is no longer valid`);
-          await removeRole(guild, k.user.discordID);
-          logger.info(`Role hase been removed since the key is no longer active`);
           await subtimeReminder(guild, k.user.discordID, reminderText.expired);
         }
         continue;
@@ -564,8 +570,6 @@ export async function updateLicenseInfo(guild: Guild) {
           data: { activeKey: null },
         });
         logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
-        await removeRole(guild, u.discordID);
-        logger.info(`Role hase been removed since the key is no longer active`);
         await subtimeReminder(guild, u.discordID, reminderText.expired);
         continue;
       }
@@ -681,6 +685,20 @@ async function subtimeReminder(guild: Guild, userId: string, message: string) {
       return;
     }
 
+    const member = await guild.members.fetch(userId);
+    if (!member) {
+      logger.error('Member not found');
+      return;
+    }
+
+    if (member.permissions.has(PermissionFlagsBits.Administrator) || member.roles.cache.has(whitelistRoleId)) {
+      logger.info('User is whitelisted, skipping reminder');
+      return;
+    }
+
+    await removeRole(guild, userId);
+    logger.info(`Role has been removed from user ${userId} since the key is no longer active`);
+
     const embed = new EmbedBuilder()
       .setTitle('Slotted Key Manager')
       .setDescription(message)
@@ -717,6 +735,7 @@ async function blackmailRoutine(guild: Guild) {
     return false;
   }
   await guild.fetch();
+
   try {
     logger.info('Blackmail routine started');
 
@@ -730,7 +749,6 @@ async function blackmailRoutine(guild: Guild) {
       const hoursSinceReminder = parseInt(diffHours(new Date(), u.lastSubtimeReminder).toFixed(1));
       logger.info(`${hoursSinceReminder} hours since last reminder`);
       if (hoursSinceReminder < 12) continue;
-      await removeRole(guild, u.discordID);
 
       logger.debug(u);
     }
