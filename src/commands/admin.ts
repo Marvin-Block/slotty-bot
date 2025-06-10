@@ -42,11 +42,31 @@ export const data = new SlashCommandBuilder()
       .setDescription("Lists all linked keys of the specified user")
       .addUserOption((option) => option.setName("user").setDescription("The user you want to list the keys of").setRequired(true))
   )
-  .addSubcommand((subcommand) =>
-    subcommand
+  .addSubcommandGroup((group) =>
+    group
       .setName("info")
-      .setDescription("Shows information about a selected users active key")
-      .addUserOption((option) => option.setName("user").setDescription("The user you want to get the info of").setRequired(true))
+      .setDescription("Get information about a users active key")
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("key")
+          .setDescription("Shows information about the active key of a selected user")
+          .addStringOption((option) =>
+            option
+              .setName("key")
+              .setDescription("The key you want to get the info of")
+              .setRequired(true)
+          )
+        )
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("user")
+          .setDescription("Shows information about the active key of a selected user")
+          .addUserOption((option) =>
+            option
+              .setName("user")
+              .setDescription("The user you want to get the info of")
+              .setRequired(true)
+      ))
   );
 
 export async function execute(interaction: CommandInteraction) {
@@ -54,6 +74,7 @@ export async function execute(interaction: CommandInteraction) {
 
   const options = interaction.options as FixedOptions;
   const subcommand = options.getSubcommand();
+  const subcommandGroup = options.getSubcommandGroup();
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   switch (subcommand) {
     case "link":
@@ -64,11 +85,33 @@ export async function execute(interaction: CommandInteraction) {
       logger.info(`Admin list called by ${interaction.user.id}`);
       await listLicenses(interaction, options);
       break;
-    case "info":
-      logger.info(`Admin info called by ${interaction.user.id}`);
-      await getLicenseInfo(interaction, options);
+    default:
+      if(subcommandGroup === "info") {
+        if(subcommand === "user") {
+          logger.info(`Admin info user called by ${interaction.user.id}`);
+          await getInfoByUser(interaction, options);
+          break;
+        }
+        else if(subcommand === "key") {
+          logger.info(`Admin info key called by ${interaction.user.id}`);
+          await getInfoByKey(interaction, options);
+          break;
+        }
+        else {
+          logger.error(`Unknown subcommand ${subcommand} called by ${interaction.user.id}`);
+          interaction.editReply({
+            content: "An error occurred, please contact the support.",
+          })
+        }
+      } else {
+        logger.error(`Unknown subcommandGroup ${subcommandGroup} called by ${interaction.user.id}`);
+        interaction.editReply({
+          content: "An error occurred, please contact the support.",
+        })
+      }
       break;
   }
+  return;
 }
 
 async function linkLicense(interaction: CommandInteraction, options: FixedOptions) {
@@ -342,7 +385,7 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
   }
 }
 
-async function getLicenseInfo(interaction: CommandInteraction, options: FixedOptions) {
+async function getInfoByUser(interaction: CommandInteraction, options: FixedOptions) {
   try {
     const optionUser = options.getUser("user");
     if (!optionUser) {
@@ -447,6 +490,123 @@ async function getLicenseInfo(interaction: CommandInteraction, options: FixedOpt
       .setTitle("Slotted Key Manager")
       .setDescription(embedDescription)
       .setThumbnail(optionUser.displayAvatarURL({ forceStatic: false }))
+      .setFooter({
+        text: `Requested by ${interaction.user.displayName}`,
+        iconURL: interaction.user.displayAvatarURL({ forceStatic: false }),
+      })
+      .setTimestamp()
+      .setColor("#500de0");
+
+    await prisma.$disconnect();
+    return interaction.editReply({
+      content: "Here is the requested license info:",
+      embeds: [embed],
+    });
+  } catch (error) {
+    logger.error(error, "Error getting license info");
+    await prisma.$disconnect();
+    return interaction.editReply({
+      content: "An error occured, please contact the support.",
+    });
+  }
+}
+
+async function getInfoByKey(interaction: CommandInteraction, options: FixedOptions) {
+  try {
+    const optionKey = options.getString("key");
+    if (!optionKey) {
+      logger.error("Interaction option key not found");
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: "An error occurred, please contact the support.",
+      });
+    }
+
+    logger.info(`License info for key ${optionKey}`);
+
+    if (!keyReg.test(optionKey)) {
+      logger.error(`Invalid key format ${optionKey}`);
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: "The key you provided is not valid.",
+      });
+    }
+
+    const success = await updateLicenseInfo(interaction.guild!);
+    if (!success) {
+      logger.error("Error updating license info");
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: "An error occured, please contact the support.",
+      });
+    }
+
+    const key = await prisma.key.findUnique({
+      where: { key: optionKey },
+      include: { user: true },
+    });
+
+    if(!key) {
+      logger.error(`Key ${optionKey} not found`);
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: "An error occurred, please contact the support.",
+      });
+    }
+
+    const user = await interaction.guild?.members.fetch(key.user.discordID).catch( () => null);
+
+    if(!user) {
+      logger.error(`User with ID ${key.user.discordID} not found in guild`);
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: "The user linked to this key is not found in the guild.",
+      });
+    }
+    let embedDescription = "";
+    embedDescription += `**License #${key.id}**\n`;
+    embedDescription += "├ User: " + user.displayName + "\n";
+    embedDescription += "├ Key: `" + key.key + "`\n";
+    if(
+      (key.expirationDate.getMilliseconds() == 946681200000 || key.expirationDate.getMilliseconds() == 0) &&
+      (key.activationDate.getMilliseconds() == 946681200000 || key.activationDate.getMilliseconds() == 0) && 
+      key.active === false && key.valid === false
+    ) {
+      embedDescription += `└ Status: **Expired**\n\n`;
+    } else {
+      const newLicense = await fetchLicenseInfo(key.key);
+      if (!newLicense) {
+        logger.error(`API error with ${key.key}`);
+        await prisma.$disconnect();
+        return interaction.editReply({
+          content: "An error occured, please contact the support.",
+        });
+      }
+      const licenseEndDate = new Date(newLicense.dateActivated);
+      licenseEndDate.setDate(licenseEndDate.getDate() + newLicense.daysValid);
+
+      await prisma.key.update({
+        where: { id: key.id },
+        data: {
+          active: newLicense.active,
+          valid: newLicense.valid,
+          activationDate: new Date(newLicense.dateActivated),
+          expirationDate: licenseEndDate,
+        },
+      });
+      embedDescription += `├ Expires${
+        newLicense.dateActivated === null ? `: ${newLicense.daysValid} Days after activation` : `in: ${diffText(licenseEndDate, new Date())}`
+      }\n`;
+      embedDescription += `├ Activation Time: ${
+        key.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)
+      }\n`;
+      embedDescription += `└ Status: ${key.active ? "**Active**" : "Inactive"}\n\n`;
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle("Slotted Key Manager")
+      .setDescription(embedDescription)
+      .setThumbnail(user.displayAvatarURL({ forceStatic: false }))
       .setFooter({
         text: `Requested by ${interaction.user.displayName}`,
         iconURL: interaction.user.displayAvatarURL({ forceStatic: false }),

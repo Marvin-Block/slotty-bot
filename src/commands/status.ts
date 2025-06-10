@@ -66,13 +66,11 @@ export async function execute(interaction: CommandInteraction) {
   await channel
     .fetch()
     .then(async (ch) => {
-      logger.debug(ch, 'Fetched channel');
       await ch
         .edit({
           name: value,
         })
         .then(() => {
-          logger.debug('Status updated', 'Status Update');
           return interaction.editReply({
             content: `Status updated to ${value}`,
           });
@@ -90,9 +88,5 @@ export async function execute(interaction: CommandInteraction) {
         content: 'Error fetching channel',
       });
     })
-    .finally(() => {
-      logger.debug('Status update finished', 'Status Update');
-    });
-  logger.debug(`Status updated to ${value}`, 'Status Update');
   return;
 }

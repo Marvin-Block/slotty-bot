@@ -475,7 +475,6 @@ export async function updateLicenseInfo(guild: Guild) {
     for (const k of key) {
       // update keys in 10 minutes intervals
       if (k.updatedAt > new Date(Date.now() - 1000 * 60 * 10)) {
-        logger.debug(`last update ${k.updatedAt.toISOString()}, ${new Date(Date.now() - 1000 * 60 * 5).toISOString()}`);
         logger.info(`Key ${k.key} was updated recently, skipping`);
         continue;
       }
@@ -624,8 +623,12 @@ export async function updateLicenseInfo(guild: Guild) {
 }
 
 export async function giveRole(guild: Guild, userId: string) {
-  const member = await guild.members.fetch(userId);
-  await member?.user.fetch();
+  const member = await guild.members.fetch(userId).catch(() => null);
+  if(!member) {
+    logger.error(`Member with ID ${userId} not found in guild ${guild.id}`);
+    return false;
+  }
+  await member.user.fetch().catch(() => null);
   try {
     if (!member) {
       logger.error('Member not found');
@@ -650,8 +653,12 @@ export async function giveRole(guild: Guild, userId: string) {
 }
 
 async function removeRole(guild: Guild, userId: string) {
-  const member = await guild.members.fetch(userId);
-  await member?.user.fetch();
+  const member = await guild.members.fetch(userId).catch(() => null);
+  if(!member) {
+    logger.error(`Member with ID ${userId} not found in guild ${guild.id}`);
+    return false;
+  }
+  await member.user.fetch().catch(() => null);
   try {
     if (!member) {
       logger.error('Member not found');
@@ -678,14 +685,14 @@ async function removeRole(guild: Guild, userId: string) {
 async function subtimeReminder(guild: Guild, userId: string, message: string) {
   try {
     const client = guild.client;
-    const user = await client.users.fetch(userId);
+    const user = await client.users.fetch(userId).catch(() => null);
 
     if (!user) {
       logger.error('User not found');
       return;
     }
 
-    const member = await guild.members.fetch(userId);
+    const member = await guild.members.fetch(userId).catch(() => null);
     if (!member) {
       logger.error('Member not found');
       return;
@@ -749,8 +756,6 @@ async function blackmailRoutine(guild: Guild) {
       const hoursSinceReminder = parseInt(diffHours(new Date(), u.lastSubtimeReminder).toFixed(1));
       logger.info(`${hoursSinceReminder} hours since last reminder`);
       if (hoursSinceReminder < 12) continue;
-
-      logger.debug(u);
     }
 
     await prisma.$disconnect();

@@ -24,9 +24,6 @@ export async function fetchLicenseInfo(key: string): Promise<LicenseInfo | null>
   const data = await fetch(url, options)
     .then((res) => res.json())
     .then((res: LicenseInfo) => {
-      if (!res.dateActivated) {
-        res.dateActivated = new Date(0).getMilliseconds().toString();
-      }
       if (!res.daysValid) {
         res.daysValid = 0;
       }

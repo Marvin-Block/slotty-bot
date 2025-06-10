@@ -14,6 +14,7 @@ import * as fs from "fs";
 import nodeHtmlToImage from "node-html-to-image";
 import { diffDays, diffText } from "../helper/dates";
 import { FixedImageOptions, FixedOptions, SaluteUser } from "../typeFixes";
+import { updateLicenseInfo } from "./license";
 
 const prisma = new PrismaClient();
 
@@ -66,6 +67,9 @@ export async function execute(interaction: CommandInteraction) {
         where: { key: saluteUser.activeKey },
       });
       if (key) {
+        if(interaction.guild) {
+          await updateLicenseInfo(interaction.guild)
+        }
         const days = parseInt(diffDays(key.expirationDate, new Date()).toFixed(0));
         if (days > 500) {
           subTime = "Lifetime";
@@ -303,6 +307,9 @@ async function statUser(interaction: UserContextMenuCommandInteraction | Command
       where: { key: saluteUser.activeKey },
     });
     if (key) {
+      if(interaction.guild) {
+        await updateLicenseInfo(interaction.guild);
+      }
       const days = parseInt(diffDays(key.expirationDate, new Date()).toFixed(0));
       if (days > 500) {
         subTime = "Lifetime";
