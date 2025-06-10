@@ -156,7 +156,10 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
 
     console.log(license);
 
-    if (license.dateActivated !== null && (license.daysLeft <0  || license.daysValid < 0)) {
+    if (
+      (license.dateActivated !== null && (license.daysLeft <= 0  || license.daysValid <= 0)) ||
+      (license.daysLeft === 0 && license.daysValid === 0 && license.dateActivated === null)
+    ) {
       if (!license.active) {
         await prisma.$disconnect();
         logger.error(`${key} is no longer active`);
@@ -535,6 +538,7 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
     }
 
     const success = await updateLicenseInfo(interaction.guild!);
+
     if (!success) {
       logger.error("Error updating license info");
       await prisma.$disconnect();
@@ -569,14 +573,9 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
     embedDescription += `**License #${key.id}**\n`;
     embedDescription += "├ User: " + user.displayName + "\n";
     embedDescription += "├ Key: `" + key.key + "`\n";
-    if(
-      (key.expirationDate.getMilliseconds() == 946681200000 || key.expirationDate.getMilliseconds() == 0) &&
-      (key.activationDate.getMilliseconds() == 946681200000 || key.activationDate.getMilliseconds() == 0) && 
-      key.active === false && key.valid === false
-    ) {
-      embedDescription += `└ Status: **Expired**\n\n`;
-    } else {
-      const newLicense = await fetchLicenseInfo(key.key);
+    
+    const newLicense = await fetchLicenseInfo(key.key);
+
       if (!newLicense) {
         logger.error(`API error with ${key.key}`);
         await prisma.$disconnect();
@@ -584,8 +583,16 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
           content: "An error occured, please contact the support.",
         });
       }
+
       const licenseEndDate = new Date(newLicense.dateActivated);
       licenseEndDate.setDate(licenseEndDate.getDate() + newLicense.daysValid);
+
+    if (
+      (newLicense.dateActivated !== null && (newLicense.daysLeft <= 0  || newLicense.daysValid <= 0)) ||
+      (newLicense.daysLeft === 0 && newLicense.daysValid === 0 && newLicense.dateActivated === null)
+    ){
+      embedDescription += `└ Status: **Expired**\n\n`;
+    } else {
 
       await prisma.key.update({
         where: { id: key.id },
@@ -596,15 +603,6 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
           expirationDate: licenseEndDate,
         },
       });
-      if(newLicense.daysLeft < 0 && !newLicense.active) {
-        embedDescription += `├ Expired${
-          newLicense.dateActivated === null ? `: ${newLicense.daysValid} Days after activation` : `: ${diffText(licenseEndDate, new Date())} ago`
-        }\n`;
-        embedDescription += `├ Activation Time: ${
-          key.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)
-        }\n`;
-        embedDescription += `└ Status: **Expired**\n\n`;
-      } else {
         embedDescription += `├ Expires${
           newLicense.dateActivated === null ? `: ${newLicense.daysValid} Days after activation` : `in: ${diffText(licenseEndDate, new Date())}`
         }\n`;
@@ -612,7 +610,6 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
           key.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)
         }\n`;
         embedDescription += `└ Status: ${key.active ? "**Active**" : "Inactive"}\n\n`;
-      }
     }
 
     const embed = new EmbedBuilder()
