@@ -154,7 +154,7 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       });
     }
 
-    if (!license.dateActivated === null || license.daysValid <= 0) {
+    if (!license.dateActivated === null || license.daysValid <= 0 || license.daysLeft < 0) {
       if (!license.active) {
         await prisma.$disconnect();
         logger.error(`${key} is no longer active`);
@@ -594,13 +594,23 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
           expirationDate: licenseEndDate,
         },
       });
-      embedDescription += `├ Expires${
-        newLicense.dateActivated === null ? `: ${newLicense.daysValid} Days after activation` : `in: ${diffText(licenseEndDate, new Date())}`
-      }\n`;
-      embedDescription += `├ Activation Time: ${
-        key.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)
-      }\n`;
-      embedDescription += `└ Status: ${key.active ? "**Active**" : "Inactive"}\n\n`;
+      if(newLicense.daysLeft < 0 && !newLicense.active) {
+        embedDescription += `├ Expired${
+          newLicense.dateActivated === null ? `: ${newLicense.daysValid} Days after activation` : `: ${diffText(licenseEndDate, new Date())} ago`
+        }\n`;
+        embedDescription += `├ Activation Time: ${
+          key.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)
+        }\n`;
+        embedDescription += `└ Status: **Expired**\n\n`;
+      } else {
+        embedDescription += `├ Expires${
+          newLicense.dateActivated === null ? `: ${newLicense.daysValid} Days after activation` : `in: ${diffText(licenseEndDate, new Date())}`
+        }\n`;
+        embedDescription += `├ Activation Time: ${
+          key.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)
+        }\n`;
+        embedDescription += `└ Status: ${key.active ? "**Active**" : "Inactive"}\n\n`;
+      }
     }
 
     const embed = new EmbedBuilder()
