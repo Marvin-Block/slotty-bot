@@ -154,7 +154,9 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       });
     }
 
-    if (!license.dateActivated === null || license.daysValid <= 0 || license.daysLeft < 0) {
+    console.log(license);
+
+    if (license.dateActivated !== null && (license.daysLeft <0  || license.daysValid < 0)) {
       if (!license.active) {
         await prisma.$disconnect();
         logger.error(`${key} is no longer active`);
