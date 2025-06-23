@@ -1,23 +1,23 @@
-import { join } from 'path';
-import { pino } from 'pino';
+import { join } from "path";
+import { pino } from "pino";
 
 const transport = pino.transport({
   targets: [
+    // {
+    //   level: process.env.PINO_LOG_LEVEL || 'info',
+    //   target: 'pino-roll',
+    //   options: {
+    //     file: join('logs', 'log'),
+    //     frequency: 'daily',
+    //     mkdir: true,
+    //     extension: 'log',
+    //     dateFormat: 'yyyy-MM-dd',
+    //     symlink: true,
+    //   },
+    // },
     {
-      level: process.env.PINO_LOG_LEVEL || 'info',
-      target: 'pino-roll',
-      options: {
-        file: join('logs', 'log'),
-        frequency: 'daily',
-        mkdir: true,
-        extension: 'log',
-        dateFormat: 'yyyy-MM-dd',
-        symlink: true,
-      },
-    },
-    {
-      level: process.env.PINO_LOG_LEVEL || 'info',
-      target: 'pino-pretty',
+      level: process.env.PINO_LOG_LEVEL || "info",
+      target: "pino-pretty",
       options: {
         colorize: true,
       },
@@ -45,9 +45,9 @@ const transport = pino.transport({
 
 export const logger = pino(
   {
-    level: process.env.PINO_LOG_LEVEL || 'info',
+    level: process.env.PINO_LOG_LEVEL || "info",
     base: undefined,
-    nestedKey: 'payload',
+    nestedKey: "payload",
   },
   transport
 );
