@@ -621,12 +621,22 @@ export async function updateLicenseInfo(guild: Guild) {
 			logger.info(`${hoursSinceReminder} hours since last reminder`);
 			if (hoursSinceReminder < 18) continue;
 			logger.info(`${daysLeft} days left`);
-			if (daysLeft == 0) {
-				logger.info(`User ${user.discordID} has less than a day on their key`);
-				await subtimeReminder(guild, user.discordID, reminderText.oneDay);
-			} else if (daysLeft == 2) {
-				logger.info(`User ${user.discordID} has less than three days on their key`);
-				await subtimeReminder(guild, user.discordID, reminderText.threeDays);
+
+			const license = await fetchLicenseInfo(key.key);
+
+			if (!license) {
+				logger.error(`API error with ${key}`);
+				continue;
+			}
+
+			if (license.dateActivated !== null && (license.daysLeft < 0 || license.daysValid < 0)) {
+				if (daysLeft == 0) {
+					logger.info(`User ${user.discordID} has less than a day on their key`);
+					await subtimeReminder(guild, user.discordID, reminderText.oneDay);
+				} else if (daysLeft == 2) {
+					logger.info(`User ${user.discordID} has less than three days on their key`);
+					await subtimeReminder(guild, user.discordID, reminderText.threeDays);
+				}
 			}
 		}
 
