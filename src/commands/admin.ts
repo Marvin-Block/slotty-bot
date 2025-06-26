@@ -356,27 +356,28 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
 			updatedKeys.push({ ...newKey, license });
 		}
 
-		let embedDescription = '';
-		updatedKeys.forEach((key) => {
-			embedDescription += `**License #${key.id}**\n`;
-			embedDescription += '├ Key: `' + key.key + '`\n';
-			if (key.license) {
-				embedDescription += `├ Expires${
-					key.license.dateActivated === null
-						? `: ${key.license.daysValid} Days after activation`
-						: `in: ${diffText(key.expirationDate, new Date())}`
-				}\n`;
-				embedDescription += `├ Activation Time: ${
-					key.activationDate.getTime() === new Date(0).getTime()
-						? 'Never'
-						: time(key.activationDate, TimestampStyles.ShortDateTime)
-				}\n`;
-			} else {
-				embedDescription += `├ Expires in: ${diffText(key.expirationDate, new Date())}\n`;
-				embedDescription += `├ Activation Time: ${time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
-			}
-			embedDescription += `└ Status: ${key.active ? '**Active**' : '**Inactive**'}\n\n`;
-		});
+    let embedDescription = "";
+    updatedKeys.forEach((key) => {
+      embedDescription += `**License #${key.id}**\n`;
+      embedDescription += "├ Key: `" + key.key + "`\n";
+      if (key.license) {
+        if((key.license.dateActivated !== null && (key.license.daysLeft <= 0  || key.license.daysValid <= 0)) ||
+        (key.license.daysLeft === 0 && key.license.daysValid === 0 && key.license.dateActivated === null)) {
+          embedDescription += `└ Status: **Expired**\n\n`;
+        } else {
+          embedDescription += `├ Expires${
+            key.license.dateActivated === null ? `: ${key.license.daysValid} Days after activation` : `in: ${diffText(key.expirationDate, new Date())}`
+          }\n`;
+          embedDescription += `├ Activation Time: ${
+            key.activationDate.getTime() === new Date(0).getTime() ? "Never" : time(key.activationDate, TimestampStyles.ShortDateTime)
+          }\n`;
+        }
+      } else {
+        embedDescription += `├ Expires in: ${diffText(key.expirationDate, new Date())}\n`;
+        embedDescription += `├ Activation Time: ${time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
+      }
+      embedDescription += `└ Status: ${key.active ? "**Active**" : "**Inactive**"}\n\n`;
+    });
 
 		const embed = new EmbedBuilder()
 			.setTitle('Slotted Key Manager')

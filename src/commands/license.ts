@@ -451,51 +451,52 @@ async function getLicenseInfo(interaction: CommandInteraction) {
 }
 
 export async function updateLicenseInfo(guild: Guild) {
-	if (!guild) {
-		logger.error('Guild not found');
-		return false;
-	}
-	await guild.fetch();
-	try {
-		logger.info('Updating license info');
-		const key = await prisma.key.findMany({
-			where: {
-				OR: [
-					{ active: true, valid: true },
-					{ active: true, valid: false },
-					{ active: false, valid: true },
-				],
-			},
-			include: { user: true },
-		});
-		if (key.length < 1) {
-			logger.info('No updateable keys found');
-			const users = await prisma.user.findMany({
-				where: { activeKey: { not: null } },
-			});
-			if (users.length < 1) {
-				logger.info('No users with invalid active keys found');
-				await prisma.$disconnect();
-				return true;
-			} else {
-				for (const u of users) {
-					await prisma.user.update({
-						where: { discordID: u.discordID },
-						data: { activeKey: null },
-					});
-					logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
-					await subtimeReminder(guild, u.discordID, reminderText.expired);
-				}
-			}
-			await prisma.$disconnect();
-			return true;
-		}
-		for (const k of key) {
-			// update keys in 10 minutes intervals
-			if (k.updatedAt > new Date(Date.now() - 1000 * 60 * 10)) {
-				logger.info(`Key ${k.key} was updated recently, skipping`);
-				continue;
-			}
+  if (!guild) {
+    logger.error('Guild not found');
+    return false;
+  }
+  await guild.fetch();
+  try {
+    logger.info('Updating license info');
+    const key = await prisma.key.findMany({
+      where: {
+        OR: [
+          { active: true, valid: true },
+          { active: true, valid: false },
+          { active: false, valid: true },
+          { active: false, valid: false },
+        ],
+      },
+      include: { user: true },
+    });
+    if (key.length < 1) {
+      logger.info('No updateable keys found');
+      const users = await prisma.user.findMany({
+        where: { activeKey: { not: null } },
+      });
+      if (users.length < 1) {
+        logger.info('No users with invalid active keys found');
+        await prisma.$disconnect();
+        return true;
+      } else {
+        for (const u of users) {
+          await prisma.user.update({
+            where: { discordID: u.discordID },
+            data: { activeKey: null },
+          });
+          logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
+          await subtimeReminder(guild, u.discordID, reminderText.expired);
+        }
+      }
+      await prisma.$disconnect();
+      return true;
+    }
+    for (const k of key) {
+      // update keys in 10 minutes intervals
+      if (k.updatedAt > new Date(Date.now() - 1000 * 60 * 10)) {
+        logger.info(`Key ${k.key} was updated recently, skipping`);
+        continue;
+      }
 
 			const license = await fetchLicenseInfo(k.key);
 			if (!license) {
@@ -503,63 +504,70 @@ export async function updateLicenseInfo(guild: Guild) {
 				continue;
 			}
 
-			const licenseEndDate = new Date(license.dateActivated);
-			licenseEndDate.setDate(licenseEndDate.getDate() + license.daysValid);
-			if (!license.active) {
-				await prisma.key.update({
-					where: { id: k.id },
-					data: {
-						active: license.active,
-						valid: license.valid,
-						activationDate: new Date(license.dateActivated),
-						expirationDate: licenseEndDate,
-					},
-				});
-				logger.info(`${k.key} is now inactive`);
-				if (k.user.activeKey === k.key) {
-					await prisma.user.update({
-						where: { discordID: k.user.discordID },
-						data: { activeKey: null },
-					});
-					logger.info(`${k.key} has been removed from user ${k.user.discordID} since it is no longer active`);
-					await subtimeReminder(guild, k.user.discordID, reminderText.expired);
-				}
-				continue;
-			}
+      const licenseEndDate = new Date(license.dateActivated);
+      licenseEndDate.setDate(licenseEndDate.getDate() + license.daysValid);
 
-			if (!license.valid) {
-				await prisma.key.update({
-					where: { id: k.id },
-					data: {
-						active: license.active,
-						valid: license.valid,
-						activationDate: new Date(license.dateActivated),
-						expirationDate: licenseEndDate,
-					},
-				});
-				logger.info(`${k.key} is now invalid`);
-				if (k.user.activeKey === k.key) {
-					await prisma.user.update({
-						where: { discordID: k.user.discordID },
-						data: { activeKey: null },
-					});
-					logger.info(`${k.key} has been removed from user ${k.user.discordID} since it is no longer valid`);
-					await subtimeReminder(guild, k.user.discordID, reminderText.expired);
-				}
-				continue;
-			}
+      if (
+        (license.dateActivated !== null && (license.daysLeft <= 0  || license.daysValid <= 0)) ||
+        (license.daysLeft === 0 && license.daysValid === 0 && license.dateActivated === null) ||
+        (!license.active && !license.valid && license.dateActivated === null && !license.daysLeft && !license.daysValid)
+      ) {
 
-			await prisma.key.update({
-				where: { id: k.id },
-				data: {
-					active: license.active,
-					valid: license.valid,
-					activationDate: new Date(license.dateActivated),
-					expirationDate: licenseEndDate,
-				},
-			});
-			logger.info(`${k.key} has been updated`);
-		}
+      if (!license.active) {
+        await prisma.key.update({
+          where: { id: k.id },
+          data: {
+            active: license.active,
+            valid: license.valid,
+            activationDate: new Date(license.dateActivated),
+            expirationDate: licenseEndDate,
+          },
+        });
+        logger.info(`${k.key} is now inactive`);
+        if (k.user.activeKey === k.key) {
+          await prisma.user.update({
+            where: { discordID: k.user.discordID },
+            data: { activeKey: null },
+          });
+          logger.info(`${k.key} has been removed from user ${k.user.discordID} since it is no longer active`);
+          await subtimeReminder(guild, k.user.discordID, reminderText.expired);
+        }
+        continue;
+      }
+
+      if (!license.valid) {
+        await prisma.key.update({
+          where: { id: k.id },
+          data: {
+            active: license.active,
+            valid: license.valid,
+            activationDate: new Date(license.dateActivated),
+            expirationDate: licenseEndDate,
+          },
+        });
+        logger.info(`${k.key} is now invalid`);
+        if (k.user.activeKey === k.key) {
+          await prisma.user.update({
+            where: { discordID: k.user.discordID },
+            data: { activeKey: null },
+          });
+          logger.info(`${k.key} has been removed from user ${k.user.discordID} since it is no longer valid`);
+          await subtimeReminder(guild, k.user.discordID, reminderText.expired);
+        }
+        continue;
+      }
+}
+      await prisma.key.update({
+        where: { id: k.id },
+        data: {
+          active: license.active,
+          valid: license.valid,
+          activationDate: new Date(license.dateActivated),
+          expirationDate: licenseEndDate,
+        },
+      });
+      logger.info(`${k.key} has been updated`);
+    }
 
 		const users = await prisma.user.findMany({
 			include: { keys: true },
