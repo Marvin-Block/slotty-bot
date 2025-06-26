@@ -164,7 +164,8 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
 
 		if (
 			(license.dateActivated !== null && (license.daysLeft <= 0 || license.daysValid <= 0)) ||
-			(license.daysLeft === 0 && license.daysValid === 0 && license.dateActivated === null)
+			(license.daysLeft === 0 && license.daysValid === 0 && license.dateActivated === null)||
+			(!license.active && !license.valid && license.dateActivated === null && !license.daysLeft && !license.daysValid)
 		) {
 			if (!license.active) {
 				await prisma.$disconnect();
@@ -361,8 +362,11 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
       embedDescription += `**License #${key.id}**\n`;
       embedDescription += "├ Key: `" + key.key + "`\n";
       if (key.license) {
-        if((key.license.dateActivated !== null && (key.license.daysLeft <= 0  || key.license.daysValid <= 0)) ||
-        (key.license.daysLeft === 0 && key.license.daysValid === 0 && key.license.dateActivated === null)) {
+        if(
+			(key.license.dateActivated !== null && (key.license.daysLeft <= 0  || key.license.daysValid <= 0)) ||
+        	(key.license.daysLeft === 0 && key.license.daysValid === 0 && key.license.dateActivated === null) ||
+        	(!key.license.active && !key.license.valid && key.license.dateActivated === null && !key.license.daysLeft && !key.license.daysValid)
+		)	{
           embedDescription += `└ Status: **Expired**\n\n`;
         } else {
           embedDescription += `├ Expires${
@@ -376,7 +380,6 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
         embedDescription += `├ Expires in: ${diffText(key.expirationDate, new Date())}\n`;
         embedDescription += `├ Activation Time: ${time(key.activationDate, TimestampStyles.ShortDateTime)}\n`;
       }
-      embedDescription += `└ Status: ${key.active ? "**Active**" : "**Inactive**"}\n\n`;
     });
 
 		const embed = new EmbedBuilder()
@@ -606,7 +609,9 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
 
 		if (
 			(newLicense.dateActivated !== null && (newLicense.daysLeft <= 0 || newLicense.daysValid <= 0)) ||
-			(newLicense.daysLeft === 0 && newLicense.daysValid === 0 && newLicense.dateActivated === null)
+			(newLicense.daysLeft === 0 && newLicense.daysValid === 0 && newLicense.dateActivated === null)||
+			(!newLicense.active && !newLicense.valid && newLicense.dateActivated === null && !newLicense.daysLeft && !newLicense.daysValid)
+			
 		) {
 			embedDescription += `└ Status: **Expired**\n\n`;
 		} else {
