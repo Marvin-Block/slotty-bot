@@ -12,7 +12,7 @@ import * as userEntry from './helper/createUserEntry';
 import { logger } from './helper/logger';
 import { SecureRandomGenerator } from './secure_random_number';
 import * as saluteGambling from './text-commands/salutegambling';
-import { ConnectionResponseData, ExtendedClient, GuildResponseData, TokenResponseData, UserResponseData } from './typeFixes';
+import { CommandCollection, ConnectionResponseData, ContextMenuCommandCollection, ExtendedClient, GuildResponseData, TokenResponseData, UserResponseData } from './typeFixes';
 
 const app = express();
 
@@ -38,8 +38,8 @@ const client = new Client({
   ],
 }) as ExtendedClient;
 
-client.commands = new Collection();
-client.contextMenuCommands = new Collection();
+client.commands = new Collection() as CommandCollection;
+client.contextMenuCommands = new Collection() as ContextMenuCommandCollection;
 client.modalCommands = new Collection();
 
 let t: keyof typeof commands;

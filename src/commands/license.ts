@@ -8,7 +8,7 @@ import {
 	PermissionFlagsBits,
 	SlashCommandBuilder,
 	time,
-	TimestampStyles,
+	TimestampStyles
 } from 'discord.js';
 import { fetchLicenseInfo } from '../helper/api';
 import { diffDays, diffHours, diffText } from '../helper/dates';
@@ -16,9 +16,9 @@ import { getEmote } from '../helper/getEmote';
 import { logger } from '../helper/logger';
 import { FixedOptions, LicenseInfo } from '../typeFixes';
 
-const emoteGold = getEmote('<a:gold_slotted_gif:1351793834681565214>').fullString;
-const emoteAlert = getEmote('<a:alert:1365290359072100423>').fullString;
-const emoteWarng = getEmote('<a:warng:1365290361076977805>').fullString;
+export const emoteGold = getEmote('<:slotted_gold:1349674918228394077>').fullString;
+export const emoteAlert = getEmote('<a:alert:1365290359072100423>').fullString;
+export const emoteWarng = getEmote('<a:warng:1365290361076977805>').fullString;
 
 const prisma = new PrismaClient();
 const reminderText = {
@@ -38,6 +38,7 @@ const keyReg = /^([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}$/;
 
 export const type = 'slash';
 export const name = 'license';
+export const allowDM = true;
 export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
 
 const roleId = '1341879803254411315';

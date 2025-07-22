@@ -49,6 +49,12 @@ export const data = new SlashCommandBuilder()
 	)
 	.addSubcommand((subcommand) =>
 		subcommand
+			.setName('unlink')
+			.setDescription('Unlink a slotted key from a discord account')
+			.addStringOption((option) => option.setName('key').setDescription('The key you want to unlink').setRequired(true))
+	)
+	.addSubcommand((subcommand) =>
+		subcommand
 			.setName('list')
 			.setDescription('Lists all linked keys of the specified user')
 			.addUserOption((option) =>
@@ -88,6 +94,10 @@ export async function execute(interaction: CommandInteraction) {
 		case 'link':
 			logger.info(`Admin link called by ${interaction.user.id}`);
 			await linkLicense(interaction, options);
+			break;
+		case 'unlink':
+			logger.info(`Admin unlink called by ${interaction.user.id}`);
+			await unlinkLicense(interaction, options);
 			break;
 		case 'list':
 			logger.info(`Admin list called by ${interaction.user.id}`);
@@ -265,6 +275,61 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
 			}.`,
 		});
 	} catch (e) {
+		logger.error(e);
+		await prisma.$disconnect();
+		return interaction.editReply({
+			content: 'An error occured, please contact the support.',
+		});
+	}
+}
+
+async function unlinkLicense(interaction: CommandInteraction, options: FixedOptions) {
+	try {
+		
+		const key = options.getString('key');
+		logger.info(`Attempting to unlink license key: ${key}`);
+		if (!key) {
+			logger.error('Interaction option key not found');
+			await prisma.$disconnect();
+			return interaction.editReply({
+				content: 'An error occurred, please contact the support.',
+			});
+		}
+		if (!keyReg.test(key)) {
+			logger.error(`Invalid key format ${key}`);
+			await prisma.$disconnect();
+			return interaction.editReply({
+				content: 'The key you provided is not valid.',
+			});
+		}
+		logger.info(`Unlinking license key ${key}`);
+		
+		const dbKey = await prisma.key.findUnique({
+			where: { key },
+			include: { user: true },
+		});
+
+		if( !dbKey ) {
+			logger.error(`Key ${key} not found`);
+			await prisma.$disconnect();
+			return interaction.editReply({
+				content: 'The key you provided is not linked to any user.',
+			});
+		}
+
+		await prisma.key.delete({
+			where: { key },
+		});
+
+		logger.info(`Key ${key} has been unlinked from user ${dbKey.user.discordID}`);
+		await prisma.$disconnect();
+
+		return interaction.editReply({
+			content: `The key \`${key}\` has been unlinked from ${userMention(dbKey?.user.discordID ?? 'unknown user')}.`,
+		});
+
+	}
+	catch (e) {
 		logger.error(e);
 		await prisma.$disconnect();
 		return interaction.editReply({

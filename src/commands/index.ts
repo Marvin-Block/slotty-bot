@@ -1,6 +1,7 @@
 import * as admin from './admin';
 import * as blacklist from './blacklist';
 import * as bookmark from './bookmark';
+import * as ceremony from './ceremony';
 import * as crypto from './crypto';
 import * as echo from './echo';
 import * as emote from './emote';
@@ -18,6 +19,7 @@ import * as wallet from './wallet';
 export const commands = {
   admin,
   license,
+  ceremony,
   // users,
   // keys,
   bookmark,

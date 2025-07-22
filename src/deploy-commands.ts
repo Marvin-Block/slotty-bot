@@ -1,4 +1,4 @@
-import { Client, Collection, REST, Routes } from 'discord.js';
+import { Client, REST, Routes } from 'discord.js';
 import { config } from './config';
 import { logger } from './helper/logger';
 import { CommandCollection, ContextMenuCommandCollection } from './typeFixes';
@@ -12,8 +12,8 @@ type DeployCommandsProps = {
 export async function deployCommands(
   { guildId }: DeployCommandsProps,
   client: Client<boolean> & {
-    commands: Collection<string, any>;
-    contextMenuCommands: Collection<string, any>;
+    commands: CommandCollection;
+    contextMenuCommands: ContextMenuCommandCollection;
   }
 ) {
   logger.info(`Collecting commands for guild ${guildId}`);
@@ -62,4 +62,5 @@ export async function deployCommands(
   } catch (error) {
     logger.error(error, 'Error deploying commands:');
   }
+  
 }

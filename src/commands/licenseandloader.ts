@@ -26,13 +26,11 @@ Create a txt file named license where ur loader is located.
 Open the txt and paste your license inside. 
 
 **Setting up the Plugins Folder**
-Download any available <#1317474954626859018> plugin.
+Download any available <#1383438316694671443> plugin.
 
 In the same directory as your loader, create a new folder named plugins.
 
-Place the downloaded plugin files in this plugins folder.
-
-**only 1 plugin file at once will work**`;
+Place the downloaded plugin files in this plugins folder.`;
 
   return interaction.reply({
     content: content,

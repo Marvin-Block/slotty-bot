@@ -11,8 +11,8 @@ export interface FixedOptions extends CommandInteractionOptionResolver {
 }
 
 export interface ExtendedClient extends Client {
-  commands: Collection<string, any>;
-  contextMenuCommands: Collection<string, any>;
+  commands: CommandCollection;
+  contextMenuCommands: ContextMenuCommandCollection;
   modalCommands: Collection<string, any>;
 }
 
@@ -21,6 +21,7 @@ export interface CommandCollection extends Collection<string, any> {
   type: string;
   name: string;
   data: any;
+  allowDM?: boolean;
   execute: (interaction: CommandInteraction) => Promise<void>;
 }
 
