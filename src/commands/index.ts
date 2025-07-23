@@ -6,6 +6,7 @@ import * as crypto from './crypto';
 import * as echo from './echo';
 import * as emote from './emote';
 import * as faq from './faq';
+import * as inactivity from './inactivity';
 import * as knownissues from './knownissues';
 import * as license from './license';
 import * as licenseandloader from './licenseandloader';
@@ -36,5 +37,6 @@ export const commands = {
   roulette,
   emote,
   status,
+  inactivity,
   // federalreserve,
 };

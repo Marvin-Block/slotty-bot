@@ -14,6 +14,7 @@ import { fetchLicenseInfo } from '../helper/api';
 import { diffDays, diffHours, diffText } from '../helper/dates';
 import { getEmote } from '../helper/getEmote';
 import { logger } from '../helper/logger';
+import { giveRole, removeRole } from '../helper/roles';
 import { FixedOptions, LicenseInfo } from '../typeFixes';
 
 export const emoteGold = getEmote('<:slotted_gold:1349674918228394077>').fullString;
@@ -204,7 +205,7 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
 		}
 
 		if (interaction.guild) {
-			giveRole(interaction.guild, interaction.user.id);
+			giveRole(interaction.guild, roleId, interaction.user.id);
 		}
 
 		await prisma.$disconnect();
@@ -377,7 +378,7 @@ async function getLicenseInfo(interaction: CommandInteraction) {
 				data: { activeKey: useableKey.key },
 			});
 			logger.info(`User ${interaction.user.id} has been updated`);
-			await giveRole(interaction.guild!, interaction.user.id);
+			await giveRole(interaction.guild!, roleId, interaction.user.id);
 			logger.info(` Role has been added to user ${interaction.user.id}`);
 		}
 
@@ -584,7 +585,7 @@ export async function updateLicenseInfo(guild: Guild) {
 					data: { activeKey: useableKey.key },
 				});
 				logger.info(`User ${u.discordID} has been updated`);
-				await giveRole(guild, u.discordID);
+				await giveRole(guild, roleId, u.discordID);
 				logger.info(`Role has been added to user ${u.discordID}`);
 				continue;
 			}
@@ -659,66 +660,6 @@ export async function updateLicenseInfo(guild: Guild) {
 	}
 }
 
-export async function giveRole(guild: Guild, userId: string) {
-	const member = await guild.members.fetch(userId).catch(() => null);
-	if (!member) {
-		logger.error(`Member with ID ${userId} not found in guild ${guild.id}`);
-		return false;
-	}
-	await member.user.fetch().catch(() => null);
-	try {
-		if (!member) {
-			logger.error('Member not found');
-			return false;
-		}
-		const role = guild.roles.cache.get(roleId);
-		if (!role) {
-			logger.error('Role not found');
-			return false;
-		}
-		if (member.roles.cache.has(roleId)) {
-			logger.error('User already has the role');
-			return false;
-		}
-		await member.roles.add(role);
-		logger.info('Role added to user');
-		return true;
-	} catch (error) {
-		logger.error(error, 'Error adding role to user');
-		return false;
-	}
-}
-
-async function removeRole(guild: Guild, userId: string) {
-	const member = await guild.members.fetch(userId).catch(() => null);
-	if (!member) {
-		logger.error(`Member with ID ${userId} not found in guild ${guild.id}`);
-		return false;
-	}
-	await member.user.fetch().catch(() => null);
-	try {
-		if (!member) {
-			logger.error('Member not found');
-			return false;
-		}
-		const role = guild.roles.cache.get(roleId);
-		if (!role) {
-			logger.error('Role not found');
-			return false;
-		}
-		if (!member.roles.cache.has(roleId)) {
-			logger.info('User doesnt have the role');
-			return false;
-		}
-		await member.roles.remove(role);
-		logger.info(`Role removed from user ${userId} since the key is no longer active`);
-		return true;
-	} catch (error) {
-		logger.error(error, 'Error removing role from user');
-		return false;
-	}
-}
-
 async function subtimeReminder(guild: Guild, userId: string, message: string) {
 	try {
 		const client = guild.client;
@@ -740,7 +681,7 @@ async function subtimeReminder(guild: Guild, userId: string, message: string) {
 			return;
 		}
 
-		await removeRole(guild, userId);
+		await removeRole(guild, roleId, userId);
 		logger.info(`Role has been removed from user ${userId} since the key is no longer active`);
 
 		const embed = new EmbedBuilder()

@@ -10,14 +10,15 @@ import {
 	SlashCommandBuilder,
 	userMention
 } from 'discord.js';
+import { config } from '../config';
 import { fetchLicenseInfo } from '../helper/api';
 import { logger } from '../helper/logger';
+import { giveRole } from '../helper/roles';
 import { FixedOptions } from '../typeFixes';
-import { emoteGold, giveRole } from './license';
+import { emoteGold } from './license';
 
 const prisma = new PrismaClient();
 const keyReg = /^([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}$/;
-const mainServerID = '1074973203249770538';
 const ticketChannelMessageLink = 'https://discord.com/channels/1300479915308613702/1330889242691502150/1330889548883820655';
 
 export const type = 'slash';
@@ -224,13 +225,27 @@ The key is automatically linked to your account and you can use ${inlineCode('/l
 		}
 
 		if(interaction.guild) {
-			giveRole(interaction.guild, optionUser.id);
+			let tier: string | null = null;
+			switch(updatedUser.discountCounter) {
+				case 1:
+					tier = config.TIER1;
+					break;
+				case 2:
+					tier = config.TIER2;
+					break;
+				case 3:
+					tier = config.TIER3;
+					break;
+			}
+			if(tier) {
+				giveRole(interaction.guild, tier, optionUser.id);
+			}
 		}
 
 // TODO: discountCounter -> notify about discount if applicable
-		const discountMessage = `### *SLOTTED.CC* ${emoteGold} *LEAGUE INTERNAL*
+		const discountMessage = `### Congratulations :tada:
 
-Congratulations, you have unlocked **Tier ${updatedUser.discountCounter}** :tada:
+You have unlocked **Tier ${updatedUser.discountCounter}**
 
 You are now eligible for a discount on your next purchase!
 
