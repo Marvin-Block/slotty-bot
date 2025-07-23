@@ -724,17 +724,102 @@ async function blackmailRoutine(guild: Guild) {
 	try {
 		logger.info('Blackmail routine started');
 
-		const users = await prisma.user.findMany({
+
+		const usersWithActiveKeys = await prisma.user.findMany({
+			include: { keys: true },
 			where: {
-				activeKey: null,
+				keys: {
+					some: {
+						active: true,
+						valid: true,
+						expirationDate: {
+							gte: new Date(),
+						},
+					},
+				},
 			},
 		});
 
-		for (const u of users) {
-			const hoursSinceReminder = parseInt(diffHours(new Date(), u.lastSubtimeReminder).toFixed(1));
+		for (const user of usersWithActiveKeys) {
+			const key = user.keys
+				.filter((key) => {
+					if (!key.active) return false;
+					return true;
+				})
+				.at(0);
+			if (!key) continue;
+
+			const hoursSinceReminder = parseInt(diffHours(new Date(), user.lastSubtimeReminder).toFixed(1));
+			const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
 			logger.info(`${hoursSinceReminder} hours since last reminder`);
-			if (hoursSinceReminder < 12) continue;
+			if (hoursSinceReminder < 18) continue;
+			logger.info(`${daysLeft} days left`);
+
+			const license = await fetchLicenseInfo(key.key);
+
+			if (!license) {
+				logger.error(`API error with ${key}`);
+				continue;
+			}
+
+			if(!license.dateActivated && license.daysLeft > 3) continue;
+
+			switch (license.daysLeft) {
+				case 1:
+					logger.warn(`User ${user.discordID} has less than a day on their key`);
+					await subtimeReminder(guild, user.discordID, reminderText.oneDay);
+					break;
+				case 2:
+					logger.warn(`User ${user.discordID} has two days left on their key`);
+					break;
+				case 3:
+					logger.warn(`User ${user.discordID} has three days left on their key`);
+					await subtimeReminder(guild, user.discordID, reminderText.threeDays);
+					break;
+				default:
+					logger.warn(`User ${user.discordID} has ${license.daysLeft} days left on their key`);
+					await subtimeReminder(guild, user.discordID, reminderText.expired);
+					await removeRole(guild, roleId, user.discordID);
+					logger.info(`Role has been removed from user ${user.discordID} since the key is no longer active`);
+					break;
+			}
+
+			// if (license.dateActivated !== null && (license.daysLeft < 0 || license.daysValid < 0)) {
+			// 	if (daysLeft == 0) {
+			// 		logger.info(`User ${user.discordID} has less than a day on their key`);
+			// 		await subtimeReminder(guild, user.discordID, reminderText.oneDay);
+			// 	} else if (daysLeft == 2) {
+			// 		logger.info(`User ${user.discordID} has less than three days on their key`);
+			// 		await subtimeReminder(guild, user.discordID, reminderText.threeDays);
+			// 	}
+			// }
 		}
+
+		// const users = await prisma.user.findMany({
+		// 	where: {
+		// 		activeKey: null,
+		// 	},
+		// });
+
+		// for (const u of users) {
+		// 	const hoursSinceReminder = parseInt(diffHours(new Date(), u.lastSubtimeReminder).toFixed(1));
+		// 	const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
+		// 	logger.info(`${hoursSinceReminder} hours since last reminder`);
+		// 	if (hoursSinceReminder < 18) continue;
+		// 	logger.info(`${daysLeft} days left`);
+
+		// 	const license = await fetchLicenseInfo(key.key);
+
+		// 	if (!license) {
+		// 		logger.error(`API error with ${key}`);
+		// 		continue;
+		// 	}
+		// 	// const hoursSinceReminder = parseInt(diffHours(new Date(), u.lastSubtimeReminder).toFixed(1));
+		// 	// logger.info(`${hoursSinceReminder} hours since last reminder`);
+		// 	// if (hoursSinceReminder < 12) continue;
+
+			
+		// }
 
 		await prisma.$disconnect();
 		logger.info('Licenses and Users updated');
