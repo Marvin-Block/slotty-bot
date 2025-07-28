@@ -1,9 +1,9 @@
-import { Client, REST, Routes } from 'discord.js';
-import { config } from './config';
-import { logger } from './helper/logger';
-import { CommandCollection, ContextMenuCommandCollection } from './typeFixes';
+import { Client, REST, Routes } from "discord.js";
+import { config } from "./config.js";
+import { logger } from "./helper/logger";
+import { CommandCollection, ContextMenuCommandCollection } from "./typeFixes";
 
-const rest = new REST({ version: '10' }).setToken(config.DISCORD_TOKEN);
+const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
 
 type DeployCommandsProps = {
   guildId: string;
@@ -50,17 +50,13 @@ export async function deployCommands(
     })
     .filter((command) => command !== null);
   try {
-    logger.info('Started applying commands.');
-    await rest.put(
-      Routes.applicationGuildCommands(config.DISCORD_CLIENT_ID, guildId),
-      {
-        body: [...commandsData, ...contextMenuData],
-      }
-    );
+    logger.info("Started applying commands.");
+    await rest.put(Routes.applicationGuildCommands(config.DISCORD_CLIENT_ID, guildId), {
+      body: [...commandsData, ...contextMenuData],
+    });
 
-    logger.info('Successfully applied commands.');
+    logger.info("Successfully applied commands.");
   } catch (error) {
-    logger.error(error, 'Error deploying commands:');
+    logger.error(error, "Error deploying commands:");
   }
-  
 }

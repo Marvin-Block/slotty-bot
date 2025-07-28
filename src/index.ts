@@ -1,18 +1,26 @@
-import { PrismaClient } from '@prisma/client';
-import { Client, Collection, Events, MessageFlags, PermissionsBitField } from 'discord.js';
-import express from 'express';
-import { fetch } from 'undici';
-import { commands } from './commands';
-import * as license from './commands/license';
-import * as reminder from './commands/reminder';
-import { config } from './config';
-import { deployCommands } from './deploy-commands';
-import * as blacklist from './helper/blacklist';
-import * as userEntry from './helper/createUserEntry';
-import { logger } from './helper/logger';
-import { SecureRandomGenerator } from './secure_random_number';
-import * as saluteGambling from './text-commands/salutegambling';
-import { CommandCollection, ConnectionResponseData, ContextMenuCommandCollection, ExtendedClient, GuildResponseData, TokenResponseData, UserResponseData } from './typeFixes';
+import { PrismaClient, Settings } from "@prisma/client";
+import { Client, Collection, Events, MessageFlags, PermissionsBitField } from "discord.js";
+import express from "express";
+import { fetch } from "undici";
+import { commands } from "./commands";
+import * as license from "./commands/license";
+import * as reminder from "./commands/reminder";
+import { config, getSetting, setSetting, settings } from "./config.js";
+import { deployCommands } from "./deploy-commands";
+import * as blacklist from "./helper/blacklist";
+import * as userEntry from "./helper/createUserEntry";
+import { logger } from "./helper/logger";
+import { SecureRandomGenerator } from "./secure_random_number";
+import * as saluteGambling from "./text-commands/salutegambling";
+import {
+  CommandCollection,
+  ConnectionResponseData,
+  ContextMenuCommandCollection,
+  ExtendedClient,
+  GuildResponseData,
+  TokenResponseData,
+  UserResponseData,
+} from "./typeFixes";
 
 const app = express();
 
@@ -20,21 +28,31 @@ const prisma = new PrismaClient();
 
 const secRand = new SecureRandomGenerator();
 
-const licenseAllowedGuilds = ['1074973203249770538', '1300479915308613702'];
+const licenseAllowedGuilds = ["1074973203249770538", "1300479915308613702"];
+
+const _settings: Settings[] = settings;
+if (!_settings) {
+  throw new Error("Failed to load settings");
+}
+logger.info("Settings loaded successfully");
+logger.info(`Settings: ${JSON.stringify(_settings)}`);
+
+console.log(getSetting(_settings, "delay")?.value);
+setSetting(_settings, "322659763643088897", "BASE_PRICE", "170");
 
 const client = new Client({
   intents: [
-    'GuildMessageReactions',
-    'Guilds',
-    'GuildMessages',
-    'GuildModeration',
-    'GuildExpressions',
-    'GuildPresences',
-    'GuildMessages',
-    'GuildMembers',
-    'DirectMessages',
-    'MessageContent',
-    'GuildMembers',
+    "GuildMessageReactions",
+    "Guilds",
+    "GuildMessages",
+    "GuildModeration",
+    "GuildExpressions",
+    "GuildPresences",
+    "GuildMessages",
+    "GuildMembers",
+    "DirectMessages",
+    "MessageContent",
+    "GuildMembers",
   ],
 }) as ExtendedClient;
 
@@ -45,19 +63,19 @@ client.modalCommands = new Collection();
 let t: keyof typeof commands;
 for (t in commands) {
   const command = commands[t];
-  if (command.type === 'slash') {
+  if (command.type === "slash") {
     client.commands.set(command.data.name, command);
   }
-  if (command.type == 'contextMenu' || command.name === 'stats') {
+  if (command.type == "contextMenu" || command.name === "stats") {
     client.contextMenuCommands.set(command.contextMenuData.name, command);
   }
-  if (command.name === 'echo') {
+  if (command.name === "echo") {
     client.modalCommands.set(command.cutomId, command);
   }
 }
 
 client.once(Events.ClientReady, async () => {
-  logger.info('Discord bot is ready! 🤖');
+  logger.info("Discord bot is ready! 🤖");
   secRand.generateCommitment();
 });
 
@@ -97,12 +115,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       logger.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
-          content: 'There was an error while executing this command!',
+          content: "There was an error while executing this command!",
           flags: MessageFlags.Ephemeral,
         });
       } else {
         return await interaction.reply({
-          content: 'There was an error while executing this command!',
+          content: "There was an error while executing this command!",
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -120,12 +138,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       logger.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
-          content: 'There was an error while executing this command!',
+          content: "There was an error while executing this command!",
           flags: MessageFlags.Ephemeral,
         });
       } else {
         return await interaction.reply({
-          content: 'There was an error while executing this command!',
+          content: "There was an error while executing this command!",
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -142,12 +160,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       logger.error(error);
       if (interaction.replied || interaction.deferred) {
         return await interaction.followUp({
-          content: 'There was an error while executing this command!',
+          content: "There was an error while executing this command!",
           flags: MessageFlags.Ephemeral,
         });
       } else {
         return await interaction.reply({
-          content: 'There was an error while executing this command!',
+          content: "There was an error while executing this command!",
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -164,28 +182,28 @@ client.on(Events.MessageCreate, async (message) => {
 client.login(config.DISCORD_TOKEN);
 
 const redirectUri = `${config.REDIRECT_URL}:${config.PORT}`;
-const tokenUrl = 'https://discord.com/api/oauth2/token';
-const identityUrl = 'https://discord.com/api/users/@me';
-const guildUrl = 'https://discord.com/api/users/@me/guilds';
-const connectionsUrl = 'https://discord.com/api/users/@me/connections';
+const tokenUrl = "https://discord.com/api/oauth2/token";
+const identityUrl = "https://discord.com/api/users/@me";
+const guildUrl = "https://discord.com/api/users/@me/guilds";
+const connectionsUrl = "https://discord.com/api/users/@me/connections";
 
-app.get('/', async (req: express.Request, res: express.Response) => {
+app.get("/", async (req: express.Request, res: express.Response) => {
   const { code } = req.query;
   if (code) {
     try {
-      logger.info('Code received');
+      logger.info("Code received");
       const tokenResponse = await fetch(tokenUrl, {
-        method: 'POST',
+        method: "POST",
         body: new URLSearchParams({
           client_id: config.DISCORD_CLIENT_ID,
           client_secret: config.DISCORD_SECRET,
-          grant_type: 'authorization_code',
+          grant_type: "authorization_code",
           code: code as string,
           redirect_uri: redirectUri,
-          scope: 'identify',
+          scope: "identify",
         }).toString(),
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       });
 
@@ -196,9 +214,9 @@ app.get('/', async (req: express.Request, res: express.Response) => {
             statusText: tokenResponse.statusText,
             body: await tokenResponse.json(),
           },
-          'Token response error'
+          "Token response error"
         );
-        throw new Error('Failed to fetch token. ');
+        throw new Error("Failed to fetch token. ");
       }
 
       const tokenResponseData = (await tokenResponse.json()) as TokenResponseData;
@@ -221,12 +239,12 @@ app.get('/', async (req: express.Request, res: express.Response) => {
             statusText: userResponse.statusText,
             body: await userResponse.json(),
           },
-          'User response error'
+          "User response error"
         );
-        throw new Error('Failed to fetch user data.');
+        throw new Error("Failed to fetch user data.");
       }
 
-      logger.info('User response received');
+      logger.info("User response received");
 
       const userResponseData = (await userResponse.json()) as UserResponseData;
       // TODO: Check if user is already oAuthed -> then update
@@ -245,12 +263,12 @@ app.get('/', async (req: express.Request, res: express.Response) => {
             statusText: guildReponse.statusText,
             body: await guildReponse.json(),
           },
-          'Guild response error'
+          "Guild response error"
         );
-        throw new Error('Failed to fetch guild data.');
+        throw new Error("Failed to fetch guild data.");
       }
 
-      logger.info('Guild response received');
+      logger.info("Guild response received");
 
       const guildResponseData = (await guildReponse.json()) as GuildResponseData[];
 
@@ -267,17 +285,17 @@ app.get('/', async (req: express.Request, res: express.Response) => {
             statusText: connectionResponse.statusText,
             body: await connectionResponse.json(),
           },
-          'Connection response error'
+          "Connection response error"
         );
-        throw new Error('Failed to fetch connection data.');
+        throw new Error("Failed to fetch connection data.");
       }
 
-      logger.info('Connection response received');
+      logger.info("Connection response received");
 
       const connectionResponseData = (await connectionResponse.json()) as ConnectionResponseData[];
 
-      logger.info('Redirecting to slotted.cc & creating user');
-      res.redirect('https://slotted.cc/');
+      logger.info("Redirecting to slotted.cc & creating user");
+      res.redirect("https://slotted.cc/");
       await prisma.oAuthUser.create({
         include: {
           guilds: true,
@@ -316,7 +334,9 @@ app.get('/', async (req: express.Request, res: express.Response) => {
                   banner: guild.banner,
                   isOwner: guild.owner,
                   permissions: BigInt(guild.permissions),
-                  permissionsText: permissionNames(new PermissionsBitField(BigInt(guild.permissions))).join(', '),
+                  permissionsText: permissionNames(
+                    new PermissionsBitField(BigInt(guild.permissions))
+                  ).join(", "),
                 };
               }),
             },
@@ -341,15 +361,15 @@ app.get('/', async (req: express.Request, res: express.Response) => {
         },
       });
 
-      logger.info('User created in database');
+      logger.info("User created in database");
       return;
     } catch (error) {
       logger.error(error);
-      return res.redirect('https://slotted.cc/');
+      return res.redirect("https://slotted.cc/");
     }
   } else {
-    logger.error('No code provided');
-    return res.redirect('https://slotted.cc/');
+    logger.error("No code provided");
+    return res.redirect("https://slotted.cc/");
   }
 });
 

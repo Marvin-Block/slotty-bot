@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import {
   AttachmentBuilder,
   Collection,
@@ -12,12 +12,12 @@ import {
   TimestampStyles,
   User,
   userMention,
-} from 'discord.js';
-import { config } from '../config';
-import { getEmote } from '../helper/getEmote';
-import { logger } from '../helper/logger';
-import { SecureRandomGenerator } from '../secure_random_number';
-import { FixedOptions } from '../typeFixes';
+} from "discord.js";
+import { config } from "../config.js";
+import { getEmote } from "../helper/getEmote";
+import { logger } from "../helper/logger";
+import { SecureRandomGenerator } from "../secure_random_number";
+import { FixedOptions } from "../typeFixes";
 
 const prisma = new PrismaClient();
 const secRand = new SecureRandomGenerator();
@@ -32,17 +32,15 @@ let activeRoulette = false;
 let rouletteMessageId: string | null = null;
 let rouletteChannelId: string | null = null;
 
-export const type = 'slash';
-export const name = 'roulette';
-export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+export const type = "slash";
+export const name = "roulette";
+export const allowed_servers = ["1074973203249770538", "1300479915308613702"];
 
 export const data = new SlashCommandBuilder()
   .setName(name)
   .setContexts(InteractionContextType.Guild)
-  .setDescription('Roulette')
-  .addSubcommand((sub) =>
-    sub.setName('start').setDescription('Start a round of roulette')
-  );
+  .setDescription("Roulette")
+  .addSubcommand((sub) => sub.setName("start").setDescription("Start a round of roulette"));
 
 export async function execute(interaction: CommandInteraction) {
   const options = interaction.options as FixedOptions;
@@ -50,7 +48,7 @@ export async function execute(interaction: CommandInteraction) {
   await interaction.deferReply();
 
   switch (subcommand) {
-    case 'start':
+    case "start":
       return rouletteStart(interaction);
     default:
       return;
@@ -67,14 +65,14 @@ export async function canChangeBaseBet(discordId: string) {
 async function roulette(interaction: CommandInteraction) {
   let rng1 = await secRand.generateSecureRandom(1, 100);
   let rng2 = 0;
-  let type = 'none';
-  let typeId = 'none';
+  let type = "none";
+  let typeId = "none";
   // Red - 45% chance
   if (rng1.number > 0 && rng1.number <= 45) {
     // select random variance from 1 to 24
     await secRand.generateSecureRandom(1, 24).then((rng) => {
       rng2 = rng.number;
-      type = 'Red';
+      type = "Red";
       typeId = red.id;
     });
   }
@@ -83,7 +81,7 @@ async function roulette(interaction: CommandInteraction) {
     // select random variance from 1 to 5
     await secRand.generateSecureRandom(1, 5).then((rng) => {
       rng2 = rng.number;
-      type = 'Gold';
+      type = "Gold";
       typeId = gold.id;
     });
   }
@@ -92,27 +90,25 @@ async function roulette(interaction: CommandInteraction) {
     // select random variance from 1 to 24
     await secRand.generateSecureRandom(1, 24).then((rng) => {
       rng2 = rng.number;
-      type = 'Black';
+      type = "Black";
       typeId = black.id;
     });
   }
 
   if (!rng2 || !type) {
     return interaction.editReply({
-      content: 'Error generating roulette',
+      content: "Error generating roulette",
     });
   }
-  const participantsString = participants
-    .map((value, key) => `${userMention(key)}`)
-    .join(', ');
+  const participantsString = participants.map((value, key) => `${userMention(key)}`).join(", ");
   logger.info(`Roulette: ${participantsString} - ${type} - ${rng2}`);
 
   const file = `./assets/roulette/Optimized-${type}-${rng2}.gif`;
   const attachment = new AttachmentBuilder(file);
   const embed = new EmbedBuilder()
-    .setTitle('Roulette')
-    .setColor('#601499')
-    .setDescription('## Rolling...')
+    .setTitle("Roulette")
+    .setColor("#601499")
+    .setDescription("## Rolling...")
     .setImage(`attachment://Optimized-${type}-${rng2}.gif`);
 
   const message = await interaction.followUp({
@@ -127,11 +123,9 @@ async function roulette(interaction: CommandInteraction) {
   await new Promise((resolve) => setTimeout(resolve, 23_000));
 
   const winners = participants.filter((value) => value === typeId);
-  const winnerList = winners
-    .map((value, key) => `${userMention(key)}`)
-    .join(', ');
+  const winnerList = winners.map((value, key) => `${userMention(key)}`).join(", ");
 
-  const embed2 = new EmbedBuilder().setTitle('Roulette').setColor('#601499');
+  const embed2 = new EmbedBuilder().setTitle("Roulette").setColor("#601499");
 
   if (winners.size === 0) {
     embed2.setDescription(
@@ -149,7 +143,7 @@ async function roulette(interaction: CommandInteraction) {
   });
   // TODO: Give winners their money
 
-  const multiplier = type === 'Gold' ? 10 : 2;
+  const multiplier = type === "Gold" ? 10 : 2;
   try {
     await Promise.all(
       winners.map(async (value, key) => {
@@ -173,7 +167,7 @@ async function roulette(interaction: CommandInteraction) {
           await tx.transactions.create({
             data: {
               amount: dbUser.wallet!.baseBet * multiplier,
-              type: 'win roulette',
+              type: "win roulette",
               wallet: { connect: { id: wallet.id } },
               user: { connect: { discordID: key } },
             },
@@ -182,7 +176,7 @@ async function roulette(interaction: CommandInteraction) {
       })
     );
   } catch (error) {
-    logger.error(error, 'Error in transaction');
+    logger.error(error, "Error in transaction");
     interaction.followUp({
       content: `Error in transaction, please contact support.`,
       ephemeral: true,
@@ -201,9 +195,7 @@ async function roulette(interaction: CommandInteraction) {
 async function rouletteStart(interaction: CommandInteraction) {
   if (activeRoulette) {
     if (rouletteChannelId && rouletteMessageId) {
-      const channel = await interaction.client.channels.fetch(
-        rouletteChannelId
-      );
+      const channel = await interaction.client.channels.fetch(rouletteChannelId);
       if (channel && channel.isTextBased()) {
         const message = await channel.messages.fetch(rouletteMessageId);
         if (message) {
@@ -215,7 +207,7 @@ async function rouletteStart(interaction: CommandInteraction) {
       }
     }
     return interaction.followUp({
-      content: 'Roulette is already active!',
+      content: "Roulette is already active!",
       ephemeral: true,
     });
   }
@@ -225,15 +217,13 @@ async function rouletteStart(interaction: CommandInteraction) {
   const timer = rouletteTimer;
   const rouletteStart = new Date(Date.now() + timer);
   const embed = new EmbedBuilder()
-    .setTitle('Roulette')
-    .setColor('#601499')
+    .setTitle("Roulette")
+    .setColor("#601499")
     .setDescription(
       `To enter slotty roulette, please react on the color you want to bet on\n## Voting will end ${time(
         rouletteStart,
         TimestampStyles.RelativeTime
-      )}\n\n**${red.fullString}** - 2x payout\n**${
-        gold.fullString
-      }** - 10x payout\n**${
+      )}\n\n**${red.fullString}** - 2x payout\n**${gold.fullString}** - 10x payout\n**${
         black.fullString
       }** - 2x payout\n\nTo collect your daily reward use /wallet daily\nTo set your base bet use /wallet basebet`
     );
@@ -253,7 +243,7 @@ async function rouletteStart(interaction: CommandInteraction) {
     dispose: true,
   });
 
-  collector.on('collect', async (reaction: MessageReaction, user: User) => {
+  collector.on("collect", async (reaction: MessageReaction, user: User) => {
     if (
       !(
         [red.name, gold.name, black.name].includes(reaction.emoji.name!) &&
@@ -263,16 +253,16 @@ async function rouletteStart(interaction: CommandInteraction) {
       return;
     let isNewUser = false;
     const userEntry = participants.get(user.id);
-    var voteType = '';
+    var voteType = "";
     switch (reaction.emoji.name) {
       case red.name:
-        voteType = 'Red';
+        voteType = "Red";
         break;
       case gold.name:
-        voteType = 'Gold';
+        voteType = "Gold";
         break;
       case black.name:
-        voteType = 'Black';
+        voteType = "Black";
         break;
     }
     if (!userEntry) {
@@ -282,9 +272,7 @@ async function rouletteStart(interaction: CommandInteraction) {
       await message.reactions.resolve(userEntry)?.users.remove(user.id);
       participants.delete(user.id);
       participants.set(user.id, reaction.emoji.id!);
-      logger.info(
-        `Changed reaction from: ${userEntry} to ${reaction.emoji.id}`
-      );
+      logger.info(`Changed reaction from: ${userEntry} to ${reaction.emoji.id}`);
       return interaction.followUp({
         content: `${userMention(user.id)} changed their vote to ${voteType}!`,
       });
@@ -301,13 +289,9 @@ async function rouletteStart(interaction: CommandInteraction) {
         });
       }
       if (dbUser.wallet.balance < dbUser.wallet.baseBet) {
-        await message.reactions
-          .resolve(reaction.emoji.id!)
-          ?.users.remove(user.id);
+        await message.reactions.resolve(reaction.emoji.id!)?.users.remove(user.id);
         return interaction.followUp({
-          content: `${userMention(
-            user.id
-          )} does not have enough coins to play roulette!`,
+          content: `${userMention(user.id)} does not have enough coins to play roulette!`,
         });
       }
       if (isNewUser) {
@@ -319,7 +303,7 @@ async function rouletteStart(interaction: CommandInteraction) {
           await tx.transactions.create({
             data: {
               amount: -wallet!.baseBet,
-              type: 'particiapte roulette',
+              type: "particiapte roulette",
               wallet: { connect: { id: wallet.id } },
               user: { connect: { discordID: user.id } },
             },
@@ -334,7 +318,7 @@ async function rouletteStart(interaction: CommandInteraction) {
       prisma.$disconnect();
       return;
     } catch (error) {
-      logger.error(error, 'Error in reaction collector');
+      logger.error(error, "Error in reaction collector");
       prisma.$disconnect();
       return interaction.followUp({
         content: `Error in reaction collector, please contact support.`,
@@ -342,22 +326,19 @@ async function rouletteStart(interaction: CommandInteraction) {
       });
     }
   });
-  collector.on('create', async (reaction: MessageReaction, user: User) => {
+  collector.on("create", async (reaction: MessageReaction, user: User) => {
     if (message.author.id === user.id) return;
     return await reaction.remove();
   });
   collector.on(
-    'end',
-    async (
-      collected: ReadonlyCollection<string, MessageReaction>,
-      reason: string
-    ) => {
+    "end",
+    async (collected: ReadonlyCollection<string, MessageReaction>, reason: string) => {
       logger.info(` Collector ended: ${reason} - ${collected.size}`);
       if (participants.size === 0) {
         const embed2 = new EmbedBuilder()
-          .setTitle('Roulette')
-          .setColor('#601499')
-          .setDescription('## Voting has ended and no one participated');
+          .setTitle("Roulette")
+          .setColor("#601499")
+          .setDescription("## Voting has ended and no one participated");
         await message.edit({
           embeds: [embed2],
         });
@@ -368,11 +349,11 @@ async function rouletteStart(interaction: CommandInteraction) {
         rouletteChannelId = null;
         return;
       }
-      if (reason == 'time') {
+      if (reason == "time") {
         const embed2 = new EmbedBuilder()
-          .setTitle('Roulette')
-          .setColor('#601499')
-          .setDescription('## Voting has ended and round will start shortly!');
+          .setTitle("Roulette")
+          .setColor("#601499")
+          .setDescription("## Voting has ended and round will start shortly!");
         message.edit({
           embeds: [embed2],
         });
@@ -381,7 +362,7 @@ async function rouletteStart(interaction: CommandInteraction) {
       return;
     }
   );
-  collector.on('remove', async (reaction: MessageReaction, user: User) => {
+  collector.on("remove", async (reaction: MessageReaction, user: User) => {
     const userEntry = participants.get(user.id);
     let skipRemove = false;
     message.reactions.cache.forEach(async (reaction) => {
@@ -400,35 +381,25 @@ async function rouletteStart(interaction: CommandInteraction) {
         });
         if (!dbUser || !dbUser.wallet || !dbUser.transactions) {
           await prisma.$disconnect();
-          logger.error('Cant find user, wallet or transactions');
+          logger.error("Cant find user, wallet or transactions");
           return interaction.followUp({
             content: `Cant find user, wallet or transactions, please contact support.`,
             ephemeral: true,
           });
         }
         if (dbUser.transactions.length == 0) {
-          logger.error('User has no transactions');
+          logger.error("User has no transactions");
           await prisma.$disconnect();
           return interaction.followUp({
-            content: `${userMention(
-              user.id
-            )} has no transactions, please contact support.`,
+            content: `${userMention(user.id)} has no transactions, please contact support.`,
             ephemeral: true,
           });
         }
-        dbUser.transactions.toSorted(
-          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-        );
-        const lastTransaction =
-          dbUser.transactions[dbUser.transactions.length - 1];
-        const lastTransactionDate = new Date(
-          lastTransaction.createdAt.getTime() + rouletteTimer
-        );
+        dbUser.transactions.toSorted((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+        const lastTransaction = dbUser.transactions[dbUser.transactions.length - 1];
+        const lastTransactionDate = new Date(lastTransaction.createdAt.getTime() + rouletteTimer);
 
-        if (
-          lastTransactionDate > new Date() &&
-          lastTransaction.type == 'particiapte roulette'
-        ) {
+        if (lastTransactionDate > new Date() && lastTransaction.type == "particiapte roulette") {
           await prisma.$transaction(async (tx) => {
             const wallet = await tx.wallet.update({
               where: { id: dbUser.wallet!.id },
@@ -439,20 +410,18 @@ async function rouletteStart(interaction: CommandInteraction) {
             await tx.transactions.create({
               data: {
                 amount: Math.abs(lastTransaction.amount),
-                type: 'refund roulette',
+                type: "refund roulette",
                 wallet: { connect: { id: wallet.id } },
                 user: { connect: { discordID: user.id } },
               },
             });
           });
           return interaction.followUp({
-            content: `${userMention(
-              user.id
-            )} pulled out. Your money has been refunded!`,
+            content: `${userMention(user.id)} pulled out. Your money has been refunded!`,
           });
         }
       } catch (error) {
-        logger.error(error, 'Error on removing vote');
+        logger.error(error, "Error on removing vote");
         await prisma.$disconnect();
         return interaction.followUp({
           content: `Error on removing vote, please contact support.`,

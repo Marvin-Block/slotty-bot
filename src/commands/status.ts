@@ -3,56 +3,48 @@ import {
   InteractionContextType,
   MessageFlags,
   SlashCommandBuilder,
-} from 'discord.js';
-import { config } from '../config';
-import { logger } from '../helper/logger';
-import { FixedOptions } from '../typeFixes';
+} from "discord.js";
+import { config } from "../config.js";
+import { logger } from "../helper/logger";
+import { FixedOptions } from "../typeFixes";
 
-export const type = 'slash';
-export const name = 'status';
-export const allowed_servers = ['1074973203249770538', '1300479915308613702'];
+export const type = "slash";
+export const name = "status";
+export const allowed_servers = ["1074973203249770538", "1300479915308613702"];
 
 export const data = new SlashCommandBuilder()
-  .setName('status')
+  .setName("status")
   .setContexts(InteractionContextType.Guild)
   .addSubcommand((subcommand) =>
     subcommand
-      .setName('update')
-      .setDescription('Update the status channel')
+      .setName("update")
+      .setDescription("Update the status channel")
       .addStringOption((option) =>
-        option
-          .setRequired(true)
-          .setName('status')
-          .setDescription('Status to set')
-          .addChoices(
-            {
-              name: 'Working',
-              value: '✅ WORKING ✅',
-            },
-            {
-              name: 'Updating',
-              value: '🔄 UPDATING 🔄',
-            },
-            { name: 'Server Down', value: '⛔ SERVER DOWN ⛔' },
-            { name: 'Outdated', value: '❌ OUTDATED ❌' },
-            {
-              name: 'Detected',
-              value: '🩸 DETECTED 🩸',
-            }
-          )
+        option.setRequired(true).setName("status").setDescription("Status to set").addChoices(
+          {
+            name: "Working",
+            value: "✅ WORKING ✅",
+          },
+          {
+            name: "Updating",
+            value: "🔄 UPDATING 🔄",
+          },
+          { name: "Server Down", value: "⛔ SERVER DOWN ⛔" },
+          { name: "Outdated", value: "❌ OUTDATED ❌" }
+        )
       )
   )
-  .setDescription('Updates the status of the status channel.');
+  .setDescription("Updates the status of the status channel.");
 
 export async function execute(interaction: CommandInteraction) {
   const interactionOptions = interaction.options as FixedOptions;
-  const value = interactionOptions.getString('status');
+  const value = interactionOptions.getString("status");
   interaction.deferReply({
     flags: MessageFlags.Ephemeral,
   });
   if (value == undefined || value == null) {
     return interaction.editReply({
-      content: 'Error fetching status',
+      content: "Error fetching status",
     });
   }
   const channel = interaction.guild?.channels.cache.find(
@@ -60,7 +52,7 @@ export async function execute(interaction: CommandInteraction) {
   );
   if (channel == undefined || channel == null) {
     return interaction.editReply({
-      content: 'Error fetching channel',
+      content: "Error fetching channel",
     });
   }
   await channel
@@ -76,17 +68,17 @@ export async function execute(interaction: CommandInteraction) {
           });
         })
         .catch((err) => {
-          logger.error(err, 'Error updating status');
+          logger.error(err, "Error updating status");
           return interaction.editReply({
-            content: 'Error updating status',
+            content: "Error updating status",
           });
         });
     })
     .catch((err) => {
-      logger.error(err, 'Error fetching channel');
+      logger.error(err, "Error fetching channel");
       return interaction.editReply({
-        content: 'Error fetching channel',
+        content: "Error fetching channel",
       });
-    })
+    });
   return;
 }
