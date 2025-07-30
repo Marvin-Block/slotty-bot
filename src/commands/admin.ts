@@ -187,8 +187,6 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       });
     }
 
-    console.log(license);
-
     if (
       (license.dateActivated !== null && (license.daysLeft <= 0 || license.daysValid <= 0)) ||
       (license.daysLeft === 0 && license.daysValid === 0 && license.dateActivated === null) ||

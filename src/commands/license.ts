@@ -5,16 +5,16 @@ import {
   Guild,
   InteractionContextType,
   MessageFlags,
-  PermissionFlagsBits,
   SlashCommandBuilder,
   time,
   TimestampStyles,
 } from "discord.js";
+import { config } from "../config";
 import { fetchLicenseInfo } from "../helper/api";
 import { diffDays, diffHours, diffText } from "../helper/dates";
 import { getEmote } from "../helper/getEmote";
 import { logger } from "../helper/logger";
-import { giveRole, removeRole, roleId, whitelistRoleId } from "../helper/roles";
+import { giveRole, removeRole, roleId } from "../helper/roles";
 import { FixedOptions, LicenseInfo } from "../typeFixes";
 
 export const emoteGold = getEmote("<:slotted_gold:1349674918228394077>").fullString;
@@ -23,14 +23,17 @@ export const emoteWarng = getEmote("<a:warng:1365290361076977805>").fullString;
 
 const prisma = new PrismaClient();
 const reminderText = {
-  expired: `-# ${emoteGold} LEAGUE OF LEGENDS INTERNAL
-# Your license has expired ${emoteAlert}
+  expired: `### *SLOTTED.CC* ${emoteGold} *LEAGUE INTERNAL*
+# ${emoteAlert} Your license has expired
+You have 48 hours to renew your license before you lose your discount, access to the server as well as your slot!
 -# To renew your license create a [purchase ticket](https://discord.com/channels/1300479915308613702/1330889242691502150/1330889548883820655).`,
-  oneDay: `-# ${emoteGold} LEAGUE OF LEGENDS INTERNAL
-# Your license expires in less than 24 hours ${emoteWarng} 
+  oneDay: `### *SLOTTED.CC* ${emoteGold} *LEAGUE INTERNAL*
+# ${emoteWarng} Your license expires in less than 24 hours
+You have 48 hours after expiration to renew your license before you lose your discount, access to the server as well as your slot!
 -# To renew your license create a [purchase ticket](https://discord.com/channels/1300479915308613702/1330889242691502150/1330889548883820655).`,
-  threeDays: `-# ${emoteGold} LEAGUE OF LEGENDS INTERNAL:
-# Your license expires in less than 3 days ⚠️ 
+  threeDays: `### *SLOTTED.CC* ${emoteGold} *LEAGUE INTERNAL*
+# ⚠️ Your license expires in less than 3 days
+You have 48 hours after expiration to renew your license before you lose your discount, access to the server as well as your slot!
 -# To renew your license create a [purchase ticket](https://discord.com/channels/1300479915308613702/1330889242691502150/1330889548883820655).`,
 };
 const cooldown = 1000 * 60 * 1; // 1 Minute cooldown
@@ -502,7 +505,6 @@ export async function updateLicenseInfo(guild: Guild) {
             data: { activeKey: null },
           });
           logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
-          await subtimeReminder(guild, u.discordID, reminderText.expired);
         }
       }
       await prisma.$disconnect();
@@ -547,12 +549,11 @@ export async function updateLicenseInfo(guild: Guild) {
           if (k.user.activeKey === k.key) {
             await prisma.user.update({
               where: { discordID: k.user.discordID },
-              data: { activeKey: null },
+              data: { activeKey: null, lostLicenseTime: new Date() },
             });
             logger.info(
               `${k.key} has been removed from user ${k.user.discordID} since it is no longer active`
             );
-            await subtimeReminder(guild, k.user.discordID, reminderText.expired);
           }
           continue;
         }
@@ -571,12 +572,12 @@ export async function updateLicenseInfo(guild: Guild) {
           if (k.user.activeKey === k.key) {
             await prisma.user.update({
               where: { discordID: k.user.discordID },
-              data: { activeKey: null },
+              data: { activeKey: null, lostLicenseTime: new Date() },
             });
             logger.info(
               `${k.key} has been removed from user ${k.user.discordID} since it is no longer valid`
             );
-            await subtimeReminder(guild, k.user.discordID, reminderText.expired);
+            // await subtimeReminder(guild, k.user.discordID, reminderText.expired);
           }
           continue;
         }
@@ -618,10 +619,9 @@ export async function updateLicenseInfo(guild: Guild) {
       if (u.activeKey && !hasKey) {
         await prisma.user.update({
           where: { discordID: u.discordID },
-          data: { activeKey: null },
+          data: { activeKey: null, lostLicenseTime: new Date() },
         });
         logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
-        await subtimeReminder(guild, u.discordID, reminderText.expired);
         continue;
       }
     }
@@ -701,22 +701,18 @@ async function subtimeReminder(guild: Guild, userId: string, message: string) {
       logger.error("Member not found");
       return;
     }
-
-    if (
-      member.permissions.has(PermissionFlagsBits.Administrator) ||
-      member.roles.cache.has(whitelistRoleId)
-    ) {
-      logger.info("User is whitelisted, skipping reminder");
-      return;
-    }
-
-    await removeRole(guild, roleId, userId);
-    logger.info(`Role has been removed from user ${userId} since the key is no longer active`);
+    // TODO: comment back in after testing
+    // if (
+    //   member.permissions.has(PermissionFlagsBits.Administrator) ||
+    //   member.roles.cache.has(whitelistRoleId)
+    // ) {
+    //   logger.info("User is whitelisted, skipping reminder");
+    //   return;
+    // }
 
     const embed = new EmbedBuilder()
-      .setTitle("Slotted Key Manager")
       .setDescription(message)
-      .setColor("#500de0")
+      .setColor("#ff0000")
       .setFooter({ text: "This is an automated message, please do not reply." })
       .setTimestamp();
 
@@ -792,8 +788,8 @@ async function blackmailRoutine(guild: Guild) {
         continue;
       }
 
-      if (!license.dateActivated && license.daysLeft > 3) continue;
-
+      if (license.dateActivated && license.daysLeft > 3) continue;
+      logger.debug(`License info for user ${user.discordID}: ${JSON.stringify(license)}`);
       switch (license.daysLeft) {
         case 1:
           logger.warn(`User ${user.discordID} has less than a day on their key`);
@@ -815,42 +811,76 @@ async function blackmailRoutine(guild: Guild) {
           );
           break;
       }
-
-      // if (license.dateActivated !== null && (license.daysLeft < 0 || license.daysValid < 0)) {
-      // 	if (daysLeft == 0) {
-      // 		logger.info(`User ${user.discordID} has less than a day on their key`);
-      // 		await subtimeReminder(guild, user.discordID, reminderText.oneDay);
-      // 	} else if (daysLeft == 2) {
-      // 		logger.info(`User ${user.discordID} has less than three days on their key`);
-      // 		await subtimeReminder(guild, user.discordID, reminderText.threeDays);
-      // 	}
-      // }
     }
 
-    // const users = await prisma.user.findMany({
-    // 	where: {
-    // 		activeKey: null,
-    // 	},
-    // });
+    const graceTimeUsers = await prisma.user.findMany({
+      where: {
+        lostLicenseTime: {
+          not: null,
+        },
+      },
+      include: { keys: true },
+    });
 
-    // for (const u of users) {
-    // 	const hoursSinceReminder = parseInt(diffHours(new Date(), u.lastSubtimeReminder).toFixed(1));
-    // 	const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
-    // 	logger.info(`${hoursSinceReminder} hours since last reminder`);
-    // 	if (hoursSinceReminder < 18) continue;
-    // 	logger.info(`${daysLeft} days left`);
+    for (const user of graceTimeUsers) {
+      if (!user.lostLicenseTime) continue;
+      if (!user.lastPurchase) {
+        user.lastPurchase = new Date(Date.UTC(1900, 0, 1)); // Fallback to a very old date if lastPurchase is null
+      }
+      const graceTime = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
+      const timeSinceLost = Date.now() - user.lostLicenseTime.getTime();
+      const timeSincePurchase = Date.now() - user.lastPurchase.getTime();
 
-    // 	const license = await fetchLicenseInfo(key.key);
+      if (timeSinceLost < graceTime) {
+        logger.info(`User ${user.discordID} is still in grace period`);
+        continue;
+      }
 
-    // 	if (!license) {
-    // 		logger.error(`API error with ${key}`);
-    // 		continue;
-    // 	}
-    // 	// const hoursSinceReminder = parseInt(diffHours(new Date(), u.lastSubtimeReminder).toFixed(1));
-    // 	// logger.info(`${hoursSinceReminder} hours since last reminder`);
-    // 	// if (hoursSinceReminder < 12) continue;
+      if (timeSincePurchase < graceTime) {
+        logger.info(`User ${user.discordID} has purchased a key within the grace period`);
+        continue;
+      }
 
-    // }
+      logger.warn(`User ${user.discordID} has lost their license for more than 48 hours`);
+
+      const member = await guild.members.fetch(user.discordID).catch(() => null);
+
+      if (!member) {
+        logger.error(`Member ${user.discordID} not found in guild`);
+        continue;
+      }
+
+      // TODO: comment back in after testing
+      // if (
+      //   member.permissions.has("Administrator") ||
+      //   member.roles.cache.has(roleId) // Assuming roleId is the ID of the whitelist role
+      // ) {
+      //   logger.info(`User ${user.discordID} is whitelisted, skipping blackmail`);
+      //   continue;
+      // }
+
+      member.roles.cache.forEach(async (role) => {
+        if (role.id === config.TIER1 || role.id === config.TIER2 || role.id === config.TIER3) {
+          await prisma.user
+            .update({
+              where: { discordID: user.discordID },
+              data: { discountCounter: 0 },
+            })
+            .then(async () => {
+              logger.info(`Removing role ${role.name} from user ${user.discordID}`);
+              const success = await removeRole(guild, role.id, user.discordID);
+              if (!success) {
+                logger.error(`Failed to remove role ${role.name} from user ${user.discordID}`);
+              } else {
+                logger.info(`Role ${role.name} has been removed from user ${user.discordID}`);
+              }
+            })
+            .catch((error) => {
+              logger.error(`Error updating user ${user.discordID}: ${error}`);
+            });
+        }
+      });
+    }
 
     await prisma.$disconnect();
     logger.info("Licenses and Users updated");

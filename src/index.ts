@@ -1,11 +1,11 @@
-import { PrismaClient, Settings } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Client, Collection, Events, MessageFlags, PermissionsBitField } from "discord.js";
 import express from "express";
 import { fetch } from "undici";
 import { commands } from "./commands";
 import * as license from "./commands/license";
 import * as reminder from "./commands/reminder";
-import { config, getSetting, setSetting, settings } from "./config.js";
+import { config } from "./config.js";
 import { deployCommands } from "./deploy-commands";
 import * as blacklist from "./helper/blacklist";
 import * as userEntry from "./helper/createUserEntry";
@@ -29,16 +29,6 @@ const prisma = new PrismaClient();
 const secRand = new SecureRandomGenerator();
 
 const licenseAllowedGuilds = ["1074973203249770538", "1300479915308613702"];
-
-const _settings: Settings[] = settings;
-if (!_settings) {
-  throw new Error("Failed to load settings");
-}
-logger.info("Settings loaded successfully");
-logger.info(`Settings: ${JSON.stringify(_settings)}`);
-
-console.log(getSetting(_settings, "delay")?.value);
-setSetting(_settings, "322659763643088897", "BASE_PRICE", "170");
 
 const client = new Client({
   intents: [

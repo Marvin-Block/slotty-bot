@@ -1,4 +1,6 @@
+import { PrismaClient } from "@prisma/client";
 import {
+  codeBlock,
   CommandInteraction,
   InteractionContextType,
   MessageFlags,
@@ -10,7 +12,7 @@ import { config } from "../config.js";
 import { logger } from "../helper/logger";
 import { FixedOptions } from "../typeFixes";
 const options = { method: "GET", headers: { accept: "text/plain" } };
-
+const prisma = new PrismaClient();
 export const type = "slash";
 export const name = "crypto";
 export const allowed_servers = ["1074973203249770538", "1300479915308613702", "900017491554734080"];
@@ -30,15 +32,32 @@ export const data = new SlashCommandBuilder()
         { name: "3 Months", value: config.THREE_MONTH_PRICE }
       )
   )
-  .setDescription("Replies with crypto wallted & prices");
+  .addUserOption((option) =>
+    option.setName("user").setDescription("User to send the crypto info to").setRequired(true)
+  )
+  .setDescription("Replies with crypto wallet & prices");
 
 export async function execute(interaction: CommandInteraction) {
   const interactionOptions = interaction.options as FixedOptions;
   const value = interactionOptions.getString("time");
+  const user = interactionOptions.getUser("user");
 
   if (value == undefined) {
     return interaction.reply({
-      content: "Error fetching price",
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "Interaction option 'time' not found"`
+      )}`,
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  if (!user) {
+    return interaction.reply({
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "Interaction option 'user' not found"`
+      )}`,
       flags: MessageFlags.Ephemeral,
     });
   }
@@ -47,7 +66,52 @@ export async function execute(interaction: CommandInteraction) {
   var ltcPrice = -1;
   var btcAmount = -1;
   var ltcAmount = -1;
-  const basePrice = parseInt(value as string);
+
+  const dbUser = await prisma.user.findUnique({
+    where: { discordID: user.id },
+  });
+
+  if (!dbUser) {
+    return interaction.reply({
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "User not found in database"`
+      )}`,
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  const member = await interaction.guild?.members.fetch(user.id).catch(() => null);
+
+  if (!member) {
+    return interaction.reply({
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "User not found in guild"`
+      )}`,
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  var discount = 0;
+  const memberRoles = member.roles.cache;
+  switch (dbUser.discountCounter) {
+    case 3:
+      memberRoles.has(config.TIER3) ? (discount = 30) : (discount = 0);
+      break;
+    case 2:
+      memberRoles.has(config.TIER2) ? (discount = 20) : (discount = 0);
+      break;
+    case 1:
+      memberRoles.has(config.TIER1) ? (discount = 10) : (discount = 0);
+      break;
+  }
+
+  const basePrice = parseInt(value as string) - discount;
+
+  logger.info(
+    `Fetching crypto prices for user ${user.id} with base price ${basePrice} and discount -${discount}`
+  );
 
   // fetch BTC price
   await fetch("https://api.coingate.com/api/v2/rates/merchant/GBP/BTC", options)

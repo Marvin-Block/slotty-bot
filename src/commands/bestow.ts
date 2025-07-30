@@ -11,11 +11,11 @@ import {
   userMention,
 } from "discord.js";
 import { config } from "../config.js";
-import { fetchLicenseInfo } from "../helper/api";
-import { logger } from "../helper/logger";
-import { giveRole } from "../helper/roles";
-import { FixedOptions } from "../typeFixes";
-import { emoteGold } from "./license";
+import { fetchLicenseInfo } from "../helper/api.js";
+import { logger } from "../helper/logger.js";
+import { giveRole } from "../helper/roles.js";
+import { FixedOptions } from "../typeFixes.js";
+import { emoteGold } from "./license.js";
 
 const prisma = new PrismaClient();
 const keyReg = /^([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}-([A-Z]|\d){6}$/;
@@ -23,7 +23,7 @@ const ticketChannelMessageLink =
   "https://discord.com/channels/1300479915308613702/1330889242691502150/1330889548883820655";
 
 export const type = "slash";
-export const name = "ceremony";
+export const name = "bestow";
 export const allowed_servers = [
   "1074973203249770538",
   "1300479915308613702",
@@ -40,9 +40,11 @@ export const whitelisted_users = [
   "854527909385338940", // sim
 ];
 
+const DISCOUNT_AMOUNT = [10, 20, 30];
+
 export const data = new SlashCommandBuilder()
-  .setName("ceremony")
-  .setDescription("work in progress")
+  .setName("bestow")
+  .setDescription("Send a key to a user with additional instructions")
   .setContexts(InteractionContextType.Guild)
   .setDefaultMemberPermissions(0)
   .addStringOption((option) =>
@@ -285,12 +287,13 @@ The key is automatically linked to your account and you can use ${inlineCode(
         }
       }
 
-      // TODO: discountCounter -> notify about discount if applicable
       const discountMessage = `### Congratulations :tada:
 
 You have unlocked **Tier ${updatedUser.discountCounter}**
 
-You are now eligible for a discount on your next purchase!
+You are now eligible for a discount (£${
+        DISCOUNT_AMOUNT[updatedUser.discountCounter - 1]
+      }) on your next purchase!
 
 -# If you have any questions, please ${hyperlink("create a ticket", ticketChannelMessageLink)}.
 `;
@@ -333,8 +336,6 @@ You are now eligible for a discount on your next purchase!
       await prisma.$disconnect();
       return;
     });
-
-  // TODO: check discountCounter -> notify about discount if applicable
 
   return;
 }
