@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import {
+  codeBlock,
   CommandInteraction,
   EmbedBuilder,
   InteractionContextType,
@@ -134,13 +135,19 @@ export async function execute(interaction: CommandInteraction) {
         } else {
           logger.error(`Unknown subcommand ${subcommand} called by ${interaction.user.id}`);
           interaction.editReply({
-            content: "An error occurred, please contact the support.",
+            content: `An error occurred, please contact the support.\n${codeBlock(
+              "ps",
+              `[ERROR]: "Unknown subcommand"`
+            )}`,
           });
         }
       } else {
         logger.error(`Unknown subcommandGroup ${subcommandGroup} called by ${interaction.user.id}`);
         interaction.editReply({
-          content: "An error occurred, please contact the support.",
+          content: `An error occurred, please contact the support.\n${codeBlock(
+            "ps",
+            `[ERROR]: "Unknown Subcommand Group"`
+          )}`,
         });
       }
       break;
@@ -156,7 +163,10 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       logger.error("Interaction option user not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occurred, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Interaction option 'user' not found"`
+        )}`,
       });
     }
 
@@ -167,7 +177,10 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       logger.error("Interaction option key not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occurred, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Interaction option 'key' not found"`
+        )}`,
       });
     }
     if (!keyReg.test(key)) {
@@ -184,7 +197,10 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       logger.error(`API error with ${key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occured, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "API error"`
+        )}`,
       });
     }
 
@@ -277,7 +293,10 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
       logger.error(`Error linking license key ${key} to user ${userMention(optionUser.id)}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "There was an error trying to link the key, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Unable to link key to user"`
+        )}`,
       });
     }
 
@@ -300,7 +319,10 @@ async function linkLicense(interaction: CommandInteraction, options: FixedOption
     logger.error(e);
     await prisma.$disconnect();
     return interaction.editReply({
-      content: "An error occured, please contact the support.",
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "Unknown Error, notify Muffin"`
+      )}`,
     });
   }
 }
@@ -313,7 +335,10 @@ async function unlinkLicense(interaction: CommandInteraction, options: FixedOpti
       logger.error("Interaction option key not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occurred, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Interaction option 'key' not found"`
+        )}`,
       });
     }
     if (!keyReg.test(key)) {
@@ -354,7 +379,10 @@ async function unlinkLicense(interaction: CommandInteraction, options: FixedOpti
     logger.error(e);
     await prisma.$disconnect();
     return interaction.editReply({
-      content: "An error occured, please contact the support.",
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "Unknown Error, notify Muffin"`
+      )}`,
     });
   }
 }
@@ -366,7 +394,10 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
       logger.error("Interaction option user not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occurred, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Interaction option 'user' not found"`
+        )}`,
       });
     }
 
@@ -377,7 +408,10 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
       logger.error("Error updating license info");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occured, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Updating license info failed"`
+        )}`,
       });
     }
 
@@ -390,7 +424,10 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
       logger.error("User not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occurred, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "User not found in database"`
+        )}`,
       });
     }
 
@@ -501,7 +538,10 @@ async function listLicenses(interaction: CommandInteraction, options: FixedOptio
     logger.error(error);
     await prisma.$disconnect();
     return interaction.editReply({
-      content: "An error occured, please contact the support.",
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "Unknown Error, notify Muffin"`
+      )}`,
     });
   }
 }
@@ -513,7 +553,10 @@ async function getInfoByUser(interaction: CommandInteraction, options: FixedOpti
       logger.error("Interaction option user not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occurred, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Interaction option 'user' not found"`
+        )}`,
       });
     }
 
@@ -524,7 +567,10 @@ async function getInfoByUser(interaction: CommandInteraction, options: FixedOpti
       logger.error("Error updating license info");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occured, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Updating license info failed"`
+        )}`,
       });
     }
 
@@ -537,7 +583,10 @@ async function getInfoByUser(interaction: CommandInteraction, options: FixedOpti
       logger.error("User not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occured, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "User not found in database"`
+        )}`,
       });
     }
 
@@ -581,7 +630,10 @@ async function getInfoByUser(interaction: CommandInteraction, options: FixedOpti
       logger.error(`API error with ${activeKey.key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occured, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "API error"`
+        )}`,
       });
     }
     const licenseEndDate = new Date(newLicense.dateActivated);
@@ -633,7 +685,10 @@ async function getInfoByUser(interaction: CommandInteraction, options: FixedOpti
     logger.error(error, "Error getting license info");
     await prisma.$disconnect();
     return interaction.editReply({
-      content: "An error occured, please contact the support.",
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "Unknown Error, notify Muffin"`
+      )}`,
     });
   }
 }
@@ -645,7 +700,10 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
       logger.error("Interaction option key not found");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occurred, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Interaction option 'key' not found"`
+        )}`,
       });
     }
 
@@ -665,7 +723,10 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
       logger.error("Error updating license info");
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occured, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Updating license info failed"`
+        )}`,
       });
     }
 
@@ -678,7 +739,10 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
       logger.error(`Key ${optionKey} not found`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occurred, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Key not found in database"`
+        )}`,
       });
     }
 
@@ -702,7 +766,10 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
       logger.error(`API error with ${key.key}`);
       await prisma.$disconnect();
       return interaction.editReply({
-        content: "An error occured, please contact the support.",
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "API error"`
+        )}`,
       });
     }
 
@@ -765,7 +832,10 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
     logger.error(error, "Error getting license info");
     await prisma.$disconnect();
     return interaction.editReply({
-      content: "An error occured, please contact the support.",
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "Unknown Error, notify Muffin"`
+      )}`,
     });
   }
 }
