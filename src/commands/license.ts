@@ -5,6 +5,7 @@ import {
   Guild,
   InteractionContextType,
   MessageFlags,
+  PermissionFlagsBits,
   SlashCommandBuilder,
   time,
   TimestampStyles,
@@ -14,7 +15,7 @@ import { fetchLicenseInfo } from "../helper/api";
 import { diffHours, diffMinutes, diffText } from "../helper/dates";
 import { getEmote } from "../helper/getEmote";
 import { logger } from "../helper/logger";
-import { giveRole, removeRole, roleId } from "../helper/roles";
+import { giveRole, removeRole, roleId, whitelistRoleId } from "../helper/roles";
 import { FixedOptions, LicenseInfo } from "../typeFixes";
 
 export const emoteGold = getEmote("<:slotted_gold:1349674918228394077>").fullString;
@@ -718,14 +719,14 @@ async function subtimeReminder(guild: Guild, userId: string, message: string) {
       logger.error("Member not found");
       return;
     }
-    // TODO: comment back in after testing
-    // if (
-    //   member.permissions.has(PermissionFlagsBits.Administrator) ||
-    //   member.roles.cache.has(whitelistRoleId)
-    // ) {
-    //   logger.info("User is whitelisted, skipping reminder");
-    //   return;
-    // }
+
+    if (
+      member.permissions.has(PermissionFlagsBits.Administrator) ||
+      member.roles.cache.has(whitelistRoleId)
+    ) {
+      logger.info("User is whitelisted, skipping reminder");
+      return;
+    }
 
     const embed = new EmbedBuilder()
       .setDescription(message)
@@ -836,7 +837,6 @@ async function blackmailRoutine(guild: Guild) {
           await subtimeReminder(guild, user.discordID, reminderText.threeDays);
           break;
         default:
-          // TODO: move to updateCron
           if (minutesLeft < 0) {
             logger.warn(
               `User ${user.discordID} has ${license.daysLeft} days / ${hoursLeft.toFixed(
@@ -890,15 +890,13 @@ async function blackmailRoutine(guild: Guild) {
         logger.error(`Member ${user.discordID} not found in guild`);
         continue;
       }
-
-      // TODO: comment back in after testing
-      // if (
-      //   member.permissions.has("Administrator") ||
-      //   member.roles.cache.has(roleId) // Assuming roleId is the ID of the whitelist role
-      // ) {
-      //   logger.info(`User ${user.discordID} is whitelisted, skipping blackmail`);
-      //   continue;
-      // }
+      if (
+        member.permissions.has("Administrator") ||
+        member.roles.cache.has(roleId) // Assuming roleId is the ID of the whitelist role
+      ) {
+        logger.info(`User ${user.discordID} is whitelisted, skipping blackmail`);
+        continue;
+      }
 
       member.roles.cache.forEach(async (role) => {
         if (role.id === config.TIER1 || role.id === config.TIER2 || role.id === config.TIER3) {
