@@ -3,18 +3,18 @@ import { pino } from "pino";
 
 const transport = pino.transport({
   targets: [
-    // {
-    //   level: process.env.PINO_LOG_LEVEL || 'info',
-    //   target: 'pino-roll',
-    //   options: {
-    //     file: join('logs', 'log'),
-    //     frequency: 'daily',
-    //     mkdir: true,
-    //     extension: 'log',
-    //     dateFormat: 'yyyy-MM-dd',
-    //     symlink: true,
-    //   },
-    // },
+    {
+      level: process.env.PINO_LOG_LEVEL || "info",
+      target: "pino-roll",
+      options: {
+        file: join("logs", "log"),
+        frequency: "daily",
+        mkdir: true,
+        extension: "log",
+        dateFormat: "yyyy-MM-dd",
+        symlink: true,
+      },
+    },
     {
       level: process.env.PINO_LOG_LEVEL || "info",
       target: "pino-pretty",
