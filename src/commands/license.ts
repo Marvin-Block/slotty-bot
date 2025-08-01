@@ -900,8 +900,7 @@ async function blackmailRoutine(guild: Guild) {
       if (!user.lastPurchase) {
         user.lastPurchase = new Date(Date.UTC(1900, 0, 1)); // Fallback to a very old date if lastPurchase is null
       }
-      // const graceTime = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
-      const graceTime = 0; // 0 milliseconds for testing purposes, change to 48 * 60 * 60 * 1000 for production
+      const graceTime = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
       const timeSinceLost = Date.now() - user.lostLicenseTime.getTime();
       const timeSincePurchase = Date.now() - user.lastPurchase.getTime();
 

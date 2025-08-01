@@ -10,10 +10,11 @@ import {
   TimestampStyles,
   userMention,
 } from "discord.js";
+import { config } from "../config";
 import { fetchLicenseInfo } from "../helper/api";
 import { diffText } from "../helper/dates";
 import { logger } from "../helper/logger";
-import { giveRole, roleId } from "../helper/roles";
+import { giveRole, removeRole, roleId } from "../helper/roles";
 import { FixedOptions, LicenseInfo } from "../typeFixes";
 import { updateLicenseInfo } from "./license";
 
@@ -61,6 +62,29 @@ export const data = new SlashCommandBuilder()
       .setDescription("Unlink a slotted key from a discord account")
       .addStringOption((option) =>
         option.setName("key").setDescription("The key you want to unlink").setRequired(true)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("tier")
+      .setDescription("Change the tier of a user")
+      .addUserOption((option) =>
+        option
+          .setName("user")
+          .setDescription("The user you want to change the tier of")
+          .setRequired(true)
+      )
+      .addStringOption((option) =>
+        option
+          .setName("rank")
+          .setDescription("Tier rank")
+          .setRequired(true)
+          .addChoices(
+            { name: "Remove", value: "0" },
+            { name: "Tier 1", value: config.TIER1 },
+            { name: "Tier 2", value: config.TIER2 },
+            { name: "Tier 3", value: config.TIER3 }
+          )
       )
   )
   .addSubcommand((subcommand) =>
@@ -121,6 +145,10 @@ export async function execute(interaction: CommandInteraction) {
     case "list":
       logger.info(`Admin list called by ${interaction.user.id}`);
       await listLicenses(interaction, options);
+      break;
+    case "tier":
+      logger.info(`Admin tier change called by ${interaction.user.id}`);
+      await changeUserTier(interaction, options);
       break;
     default:
       if (subcommandGroup === "info") {
@@ -830,6 +858,137 @@ async function getInfoByKey(interaction: CommandInteraction, options: FixedOptio
     });
   } catch (error) {
     logger.error(error, "Error getting license info");
+    await prisma.$disconnect();
+    return interaction.editReply({
+      content: `An error occurred, please contact the support.\n${codeBlock(
+        "ps",
+        `[ERROR]: "Unknown Error, notify Muffin"`
+      )}`,
+    });
+  }
+}
+
+async function changeUserTier(interaction: CommandInteraction, options: FixedOptions) {
+  try {
+    const optionUser = options.getUser("user");
+    const optionRank = options.getString("rank");
+
+    if (!optionUser) {
+      logger.error("Interaction option user not found");
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Interaction option 'user' not found"`
+        )}`,
+      });
+    }
+
+    if (!optionRank) {
+      logger.error("Interaction option rank not found");
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Interaction option 'rank' not found"`
+        )}`,
+      });
+    }
+
+    logger.info(`Attempting to modify rank of user ${optionUser.id}`);
+
+    const user = await prisma.user.findUnique({
+      where: { discordID: optionUser.id },
+    });
+
+    if (!user) {
+      logger.error(`User with ID ${optionUser.id} not found in database`);
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "User not found in database"`
+        )}`,
+      });
+    }
+
+    let newDiscountCounter = 0;
+
+    switch (optionRank) {
+      case config.TIER1:
+        newDiscountCounter = 1;
+        break;
+      case config.TIER2:
+        newDiscountCounter = 2;
+        break;
+      case config.TIER3:
+        newDiscountCounter = 3;
+        break;
+      default:
+        break;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { discordID: optionUser.id },
+      data: {
+        discountCounter: newDiscountCounter,
+      },
+    });
+
+    if (!updatedUser) {
+      logger.error(`Failed to update user ${optionUser.id} tier`);
+      await prisma.$disconnect();
+      return interaction.editReply({
+        content: `An error occurred, please contact the support.\n${codeBlock(
+          "ps",
+          `[ERROR]: "Failed to update user tier"`
+        )}`,
+      });
+    }
+
+    logger.info(`User ${optionUser.id} tier updated to ${optionRank}`);
+
+    if (updatedUser.discountCounter == 0) {
+      const member = await interaction.guild!.members.fetch(user.discordID).catch(() => null);
+
+      if (!member) {
+        logger.error(`Member ${user.discordID} not found in guild`);
+        return interaction.editReply({
+          content: `An error occurred, please contact the support.\n${codeBlock(
+            "ps",
+            `[ERROR]: "Member not found in guild"`
+          )}`,
+        });
+      }
+
+      member.roles.cache.forEach(async (role) => {
+        if (role.id === config.TIER1 || role.id === config.TIER2 || role.id === config.TIER3) {
+          await prisma.user
+            .update({
+              where: { discordID: user.discordID },
+              data: { discountCounter: 0 },
+            })
+            .then(async () => {
+              logger.info(`Removing role ${role.name} from user ${user.discordID}`);
+              const success = await removeRole(interaction.guild!, role.id, user.discordID);
+              if (!success) {
+                logger.error(`Failed to remove role ${role.name} from user ${user.discordID}`);
+              } else {
+                logger.info(`Role ${role.name} has been removed from user ${user.discordID}`);
+              }
+            })
+            .catch((error) => {
+              logger.error(`Error updating user ${user.discordID}: ${error}`);
+            });
+        }
+      });
+    }
+
+    await giveRole(interaction.guild!, optionRank, optionUser.id);
+
+    await prisma.$disconnect();
+  } catch (e) {
+    logger.error(e);
     await prisma.$disconnect();
     return interaction.editReply({
       content: `An error occurred, please contact the support.\n${codeBlock(
