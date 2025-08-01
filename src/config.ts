@@ -27,6 +27,7 @@ const {
   TIER1,
   TIER2,
   TIER3,
+  ACTIVE_SUB_ROLE,
 } = process.env;
 
 if (
@@ -53,7 +54,8 @@ if (
   !STATUS_CHANNEL_ID ||
   !TIER1 ||
   !TIER2 ||
-  !TIER3
+  !TIER3 ||
+  !ACTIVE_SUB_ROLE
 ) {
   throw new Error("Missing environment variables");
 }
@@ -83,6 +85,7 @@ export const config = {
   TIER1,
   TIER2,
   TIER3,
+  ACTIVE_SUB_ROLE,
 };
 
 async function loadSettings() {

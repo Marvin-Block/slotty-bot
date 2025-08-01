@@ -95,6 +95,9 @@ export async function execute(interaction: CommandInteraction) {
 
   var discount = 0;
   const memberRoles = member.roles.cache;
+  logger.debug(`has Tier 1: ${memberRoles.has(config.TIER1)}`);
+  logger.debug(`has Tier 2: ${memberRoles.has(config.TIER2)}`);
+  logger.debug(`has Tier 3: ${memberRoles.has(config.TIER3)}`);
   switch (dbUser.discountCounter) {
     case 3:
       memberRoles.has(config.TIER3) ? (discount = 30) : (discount = 0);
@@ -107,11 +110,13 @@ export async function execute(interaction: CommandInteraction) {
       break;
   }
 
-  const basePrice = parseInt(value as string) - discount;
+  let basePrice = parseInt(value as string);
 
   logger.info(
     `Fetching crypto prices for user ${user.id} with base price ${basePrice} and discount -${discount}`
   );
+
+  basePrice = basePrice - discount;
 
   // fetch BTC price
   await fetch("https://api.coingate.com/api/v2/rates/merchant/GBP/BTC", options)
@@ -145,7 +150,8 @@ export async function execute(interaction: CommandInteraction) {
   message += `To purchase with Litecoin send:\n`;
   message += `├ LTC: \`${ltcAmount.toFixed(6)}\`\n`;
   message += `└ To:  \`${config.LTC_WALLET}\`\n\n`;
-  message += `# The addresses will expire ${time(endTime, TimestampStyles.RelativeTime)}`;
+  message += `# The addresses will expire ${time(endTime, TimestampStyles.RelativeTime)}\n`;
+  message += `-# Price including applicable discounts is ${basePrice} £`;
 
   return interaction.reply({ content: message });
 }

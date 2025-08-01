@@ -11,7 +11,7 @@ import {
 } from "discord.js";
 import { config } from "../config";
 import { fetchLicenseInfo } from "../helper/api";
-import { diffDays, diffHours, diffText } from "../helper/dates";
+import { diffDays, diffHours, diffMinutes, diffText } from "../helper/dates";
 import { getEmote } from "../helper/getEmote";
 import { logger } from "../helper/logger";
 import { giveRole, removeRole, roleId } from "../helper/roles";
@@ -654,9 +654,15 @@ export async function updateLicenseInfo(guild: Guild) {
         diffHours(new Date(), user.lastSubtimeReminder).toFixed(1)
       );
       const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
+      const hoursLeft = diffHours(key.expirationDate, new Date());
+      const minutesLeft = diffMinutes(key.expirationDate, new Date());
       logger.info(`${hoursSinceReminder} hours since last reminder`);
       if (hoursSinceReminder < 18) continue;
-      logger.info(`${daysLeft} days left`);
+      logger.info(
+        `Time left for user ${user.discordID}: ${hoursLeft.toFixed(
+          1
+        )} hours or ${minutesLeft.toFixed(1)} minutes`
+      );
 
       const license = await fetchLicenseInfo(key.key);
 
@@ -776,10 +782,9 @@ async function blackmailRoutine(guild: Guild) {
       const hoursSinceReminder = parseInt(
         diffHours(new Date(), user.lastSubtimeReminder).toFixed(1)
       );
-      const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
+
       logger.info(`${hoursSinceReminder} hours since last reminder`);
       if (hoursSinceReminder < 18) continue;
-      logger.info(`${daysLeft} days left`);
 
       const license = await fetchLicenseInfo(key.key);
 
@@ -787,6 +792,17 @@ async function blackmailRoutine(guild: Guild) {
         logger.error(`API error with ${key}`);
         continue;
       }
+
+      const licenseEndDate = new Date(license.dateActivated);
+      licenseEndDate.setDate(licenseEndDate.getDate() + license.daysValid);
+
+      const hoursLeft = diffHours(licenseEndDate, new Date());
+      const minutesLeft = diffMinutes(licenseEndDate, new Date());
+      logger.info(
+        `Time left for user ${user.discordID}: ${hoursLeft.toFixed(
+          1
+        )} hours or ${minutesLeft.toFixed(1)} minutes`
+      );
 
       if (license.dateActivated && license.daysLeft > 3) continue;
       logger.debug(`License info for user ${user.discordID}: ${JSON.stringify(license)}`);
@@ -796,19 +812,31 @@ async function blackmailRoutine(guild: Guild) {
           await subtimeReminder(guild, user.discordID, reminderText.oneDay);
           break;
         case 2:
-          logger.warn(`User ${user.discordID} has two days left on their key`);
+          logger.warn(
+            `User ${user.discordID} has two days / ${hoursLeft.toFixed(1)} hours left on their key`
+          );
           break;
         case 3:
-          logger.warn(`User ${user.discordID} has three days left on their key`);
+          logger.warn(
+            `User ${user.discordID} has three days / ${hoursLeft.toFixed(
+              1
+            )} hours left on their key`
+          );
           await subtimeReminder(guild, user.discordID, reminderText.threeDays);
           break;
         default:
-          logger.warn(`User ${user.discordID} has ${license.daysLeft} days left on their key`);
-          await subtimeReminder(guild, user.discordID, reminderText.expired);
-          await removeRole(guild, roleId, user.discordID);
-          logger.info(
-            `Role has been removed from user ${user.discordID} since the key is no longer active`
-          );
+          if (minutesLeft < 0) {
+            logger.warn(
+              `User ${user.discordID} has ${license.daysLeft} days / ${hoursLeft.toFixed(
+                1
+              )} hours / ${minutesLeft.toFixed(1)} minutes left on their key`
+            );
+            await subtimeReminder(guild, user.discordID, reminderText.expired);
+            await removeRole(guild, roleId, user.discordID);
+            logger.info(
+              `Role has been removed from user ${user.discordID} since the key is no longer active`
+            );
+          }
           break;
       }
     }

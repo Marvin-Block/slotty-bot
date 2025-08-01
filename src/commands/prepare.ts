@@ -8,6 +8,7 @@ import {
 } from "discord.js";
 import { config } from "../config.js";
 import { logger } from "../helper/logger.js";
+import { roleId } from "../helper/roles.js";
 
 const prisma = new PrismaClient();
 
@@ -68,7 +69,7 @@ export async function execute(interaction: CommandInteraction) {
   members.forEach(async (member) => {
     if (member.user.bot) return;
 
-    const role = await member.roles.cache.get("1341879803254411315");
+    const role = await member.roles.cache.get(roleId);
     if (!role) {
       return;
     }

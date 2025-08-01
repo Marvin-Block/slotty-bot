@@ -13,7 +13,7 @@ import {
 import { config } from "../config.js";
 import { fetchLicenseInfo } from "../helper/api.js";
 import { logger } from "../helper/logger.js";
-import { giveRole } from "../helper/roles.js";
+import { giveRole, roleId } from "../helper/roles.js";
 import { FixedOptions } from "../typeFixes.js";
 import { emoteGold } from "./license.js";
 
@@ -210,7 +210,6 @@ The key is automatically linked to your account and you can use ${inlineCode(
         logger.info(`User ${interaction.user.id} has a discount counter of ${discountCounter}.`);
       }
 
-      // TODO: implement proper discount logic
       const updatedUser = await prisma.user.upsert({
         where: { discordID: interaction.user.id },
         update: {
@@ -270,6 +269,11 @@ The key is automatically linked to your account and you can use ${inlineCode(
       }
 
       if (interaction.guild) {
+        logger.debug("Giving role to user in guild");
+        logger.debug(`Role ID: ${roleId}`);
+        logger.debug(`User ID: ${optionUser.id}`);
+        await giveRole(interaction.guild, roleId, optionUser.id);
+
         let tier: string | null = null;
         switch (updatedUser.discountCounter) {
           case 1:
@@ -283,7 +287,7 @@ The key is automatically linked to your account and you can use ${inlineCode(
             break;
         }
         if (tier) {
-          giveRole(interaction.guild, tier, optionUser.id);
+          await giveRole(interaction.guild, tier, optionUser.id);
         }
       }
 

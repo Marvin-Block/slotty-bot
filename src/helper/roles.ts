@@ -1,7 +1,8 @@
 import { Guild } from "discord.js";
 import { logger } from "./logger";
+import { config } from "../config";
 
-export const roleId = "1341879803254411315";
+export const roleId = config.ACTIVE_SUB_ROLE;
 export const whitelistRoleId = "1354198468863856772";
 
 export async function giveRole(guild: Guild, roleId: string, userId: string) {
