@@ -151,7 +151,7 @@ export async function execute(interaction: CommandInteraction) {
   message += `├ LTC: \`${ltcAmount.toFixed(6)}\`\n`;
   message += `└ To:  \`${config.LTC_WALLET}\`\n\n`;
   message += `# The addresses will expire ${time(endTime, TimestampStyles.RelativeTime)}\n`;
-  message += `-# Price including applicable discounts is ${basePrice} £`;
+  message += `-# Price including applicable discounts is £${basePrice}`;
 
   return interaction.reply({ content: message });
 }
