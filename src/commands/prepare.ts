@@ -20,14 +20,7 @@ export const allowed_servers = [
   "1362445089120714762",
 ];
 export const whitelisted_users = [
-  "834847858439618620", // rsn
-  "846185075372720158", // sx
   "322659763643088897", // muffin
-  "1145617537711734844", // zeri
-
-  "495280024891424769", // clouq
-  "704032133106237551", // erytrea
-  "854527909385338940", // sim
 ];
 
 export const data = new SlashCommandBuilder()
