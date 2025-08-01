@@ -1,5 +1,4 @@
 {
-  "type": "module",
   "prisma": {
     "seed": "ts-node ./prisma/seed.ts"
   },
@@ -18,7 +17,6 @@
     "big-integer": "^1.6.52",
     "discord.js": "^14.17.3",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
     "node-html-to-image": "^5.0.0",
     "pino": "^9.6.0",
     "pino-abstract-transport": "^2.0.0",
@@ -30,7 +28,6 @@
     "undici": "^7.6.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.1",
     "@types/node": "^22.13.4",
     "prisma": "^6.3.0",
     "ts-node": "^10.9.2",
