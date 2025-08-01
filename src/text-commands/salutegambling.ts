@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { AttachmentBuilder, Message, OmitPartialGroupDMChannel, User } from "discord.js";
-import { config, settings } from "../config.js";
+import { asyncSettings, config } from "../config";
 import { logger } from "../helper/logger";
 import { AuditRecord, SecureRandomGenerator } from "../secure_random_number";
 
@@ -12,13 +12,10 @@ const slotty = "<:slotty:1336010394829066240>";
 const slottyGif = "<a:slotty_gif:1336009659399802900>";
 
 export async function run(message: OmitPartialGroupDMChannel<Message<boolean>>) {
-  const cooldownEnabled = settings.find((s) => s.name === "cooldownEnabled")?.value === "true";
-  const cooldown = parseInt(settings.find((s) => s.name === "cooldown")?.value ?? "1000");
-  const delay = parseInt(settings.find((s) => s.name === "delay")?.value ?? "750");
-
+  const settings = await asyncSettings;
   if (message.channelId !== config.CASINO_CHANNEL_ID) return;
   if (!message.content.startsWith(salute) || message.author.bot) return;
-  if (cooldownEnabled) {
+  if (settings.cooldownEnabled) {
     const user = await prisma.user.findFirst({
       where: { discordID: message.author.id },
     });
@@ -32,7 +29,7 @@ export async function run(message: OmitPartialGroupDMChannel<Message<boolean>>) 
       const time2 = new Date();
       const diff = Math.abs(time2.getTime() - time1!.getTime());
       logger.info(`${diff} - ${lastSalute?.id}`);
-      if (diff < cooldown) {
+      if (diff < settings.cooldown) {
         logger.info("Cooldown limiting");
         return;
       }
@@ -58,7 +55,7 @@ export async function run(message: OmitPartialGroupDMChannel<Message<boolean>>) 
         files: [attachment],
         allowedMentions: { repliedUser: false },
       });
-    }, delay);
+    }, settings.delay);
   } else if (rng.number >= 495 && rng.number <= 505) {
     // Rarity 3 - Legendary - 1%
     addToDB(message.author, 3, rng.auditRecord);
@@ -96,11 +93,11 @@ export async function run(message: OmitPartialGroupDMChannel<Message<boolean>>) 
                   slottyGif,
                 allowedMentions: { repliedUser: false },
               });
-            }, delay);
-          }, delay);
-        }, delay);
-      }, delay);
-    }, delay);
+            }, settings.delay);
+          }, settings.delay);
+        }, settings.delay);
+      }, settings.delay);
+    }, settings.delay);
   } else if ((rng.number >= 470 && rng.number <= 494) || (rng.number >= 506 && rng.number <= 530)) {
     // Rarity 2 - Epic - 5%
     addToDB(message.author, 2, rng.auditRecord);
@@ -121,10 +118,10 @@ export async function run(message: OmitPartialGroupDMChannel<Message<boolean>>) 
               content: salute + slottyGif + slottyGif + slottyGif,
               allowedMentions: { repliedUser: false },
             });
-          }, delay);
-        }, delay);
-      }, delay);
-    }, delay);
+          }, settings.delay);
+        }, settings.delay);
+      }, settings.delay);
+    }, settings.delay);
   } else if ((rng.number >= 395 && rng.number <= 469) || (rng.number >= 531 && rng.number <= 605)) {
     // Rarity 1 - Rare - 15%
     addToDB(message.author, 1, rng.auditRecord);
@@ -135,8 +132,8 @@ export async function run(message: OmitPartialGroupDMChannel<Message<boolean>>) 
           content: salute + slottyGif,
           allowedMentions: { repliedUser: false },
         });
-      }, delay);
-    }, delay);
+      }, settings.delay);
+    }, settings.delay);
   } else {
     // Rarity 0 - Normal - 78.8%
     addToDB(message.author, 0, rng.auditRecord);
@@ -147,8 +144,8 @@ export async function run(message: OmitPartialGroupDMChannel<Message<boolean>>) 
           content: salute + slotty,
           allowedMentions: { repliedUser: false },
         });
-      }, delay);
-    }, delay);
+      }, settings.delay);
+    }, settings.delay);
   }
 }
 

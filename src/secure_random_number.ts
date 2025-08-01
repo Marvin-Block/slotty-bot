@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import axios from "axios";
 import bigInt from "big-integer";
 import { createHash, randomBytes } from "crypto";
-import { settings } from "./config";
+import { asyncSettings } from "./config";
 import { logger } from "./helper/logger";
 const prisma = new PrismaClient();
 
@@ -167,9 +167,10 @@ export class SecureRandomGenerator {
         entropy.system,
         this.commitmentSalt,
       ]);
-      const vdfIterations = settings.find((s) => s.name === "vdfIterations")!.value;
 
-      const vdfResult = this.vdf(combinedEntropy, parseInt(vdfIterations));
+      const settings = await asyncSettings;
+
+      const vdfResult = this.vdf(combinedEntropy, settings.vdfIterations);
 
       const range = BigInt(max - min + 1);
       const maxValue = (BigInt(1) << BigInt(64)) - ((BigInt(1) << BigInt(64)) % range);
