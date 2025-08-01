@@ -200,19 +200,19 @@ The key is automatically linked to your account and you can use ${inlineCode(
       logger.info(`Sent key ${optionKey} to user ${optionUser.id} in DM`);
 
       const dbUser = await prisma.user.findUnique({
-        where: { discordID: interaction.user.id },
+        where: { discordID: optionUser.id },
       });
 
       let discountCounter = dbUser ? dbUser.discountCounter : 0;
       if (discountCounter >= 3) {
-        logger.info(`User ${interaction.user.id} has reached the maximum discount counter.`);
+        logger.info(`User ${optionUser.id} has reached the maximum discount counter.`);
       } else {
         discountCounter++;
-        logger.info(`User ${interaction.user.id} has a discount counter of ${discountCounter}.`);
+        logger.info(`User ${optionUser.id} has a discount counter of ${discountCounter}.`);
       }
 
       const updatedUser = await prisma.user.upsert({
-        where: { discordID: interaction.user.id },
+        where: { discordID: optionUser.id },
         update: {
           lastPurchase: new Date(),
           discountCounter,
@@ -237,7 +237,7 @@ The key is automatically linked to your account and you can use ${inlineCode(
           },
         },
         create: {
-          discordID: interaction.user.id,
+          discordID: optionUser.id,
           lastPurchase: new Date(),
           discountCounter: 1,
           activeKey: optionKey,
@@ -259,7 +259,7 @@ The key is automatically linked to your account and you can use ${inlineCode(
       });
 
       if (!updatedUser) {
-        logger.error(`Error linking license key ${optionKey} to user ${interaction.user.id}`);
+        logger.error(`Error linking license key ${optionKey} to user ${optionUser.id}`);
         await prisma.$disconnect();
         return interaction.editReply({
           content: `An error occurred, please contact the support.\n${codeBlock(

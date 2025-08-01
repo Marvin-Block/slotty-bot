@@ -141,7 +141,7 @@ export async function execute(interaction: CommandInteraction) {
   ltcAmount = basePrice * ltcPrice;
 
   const endTime = new Date();
-  endTime.setDate(endTime.getDate() + 2);
+  endTime.setDate(endTime.getDate() + 1);
 
   var message = ``;
   message += `To purchase with Bitcoin send:\n`;
