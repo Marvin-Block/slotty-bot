@@ -1,5 +1,5 @@
 import * as admin from "./admin";
-import * as ceremony from "./bestow";
+import * as bestow from "./bestow";
 import * as blacklist from "./blacklist";
 import * as bookmark from "./bookmark";
 import * as crypto from "./crypto";
@@ -23,9 +23,7 @@ export const commands = {
   prepare,
   admin,
   license,
-  ceremony,
-  // users,
-  // keys,
+  bestow,
   bookmark,
   crypto,
   licenseandloader,
@@ -42,5 +40,4 @@ export const commands = {
   status,
   inactivity,
   spoof,
-  // federalreserve,
 };

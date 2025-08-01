@@ -11,7 +11,7 @@ import {
 } from "discord.js";
 import { config } from "../config";
 import { fetchLicenseInfo } from "../helper/api";
-import { diffDays, diffHours, diffMinutes, diffText } from "../helper/dates";
+import { diffHours, diffMinutes, diffText } from "../helper/dates";
 import { getEmote } from "../helper/getEmote";
 import { logger } from "../helper/logger";
 import { giveRole, removeRole, roleId } from "../helper/roles";
@@ -551,8 +551,10 @@ export async function updateLicenseInfo(guild: Guild) {
               where: { discordID: k.user.discordID },
               data: { activeKey: null, lostLicenseTime: new Date() },
             });
+            await subtimeReminder(guild, k.user.discordID, reminderText.expired);
+            await removeRole(guild, roleId, k.user.discordID);
             logger.info(
-              `${k.key} has been removed from user ${k.user.discordID} since it is no longer active`
+              `Role has been removed from user ${k.user.discordID} since the key is no longer active`
             );
           }
           continue;
@@ -574,10 +576,14 @@ export async function updateLicenseInfo(guild: Guild) {
               where: { discordID: k.user.discordID },
               data: { activeKey: null, lostLicenseTime: new Date() },
             });
+            await subtimeReminder(guild, k.user.discordID, reminderText.expired);
+            await removeRole(guild, roleId, k.user.discordID);
+            logger.info(
+              `Role has been removed from user ${k.user.discordID} since the key is no longer active`
+            );
             logger.info(
               `${k.key} has been removed from user ${k.user.discordID} since it is no longer valid`
             );
-            // await subtimeReminder(guild, k.user.discordID, reminderText.expired);
           }
           continue;
         }
@@ -621,6 +627,11 @@ export async function updateLicenseInfo(guild: Guild) {
           where: { discordID: u.discordID },
           data: { activeKey: null, lostLicenseTime: new Date() },
         });
+        await subtimeReminder(guild, u.discordID, reminderText.expired);
+        await removeRole(guild, roleId, u.discordID);
+        logger.info(
+          `Role has been removed from user ${u.discordID} since the key is no longer active`
+        );
         logger.info(`User ${u.discordID} has been updated to remove the invalid active key`);
         continue;
       }
@@ -650,36 +661,36 @@ export async function updateLicenseInfo(guild: Guild) {
         .at(0);
       if (!key) continue;
 
-      const hoursSinceReminder = parseInt(
-        diffHours(new Date(), user.lastSubtimeReminder).toFixed(1)
-      );
-      const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
-      const hoursLeft = diffHours(key.expirationDate, new Date());
-      const minutesLeft = diffMinutes(key.expirationDate, new Date());
-      logger.info(`${hoursSinceReminder} hours since last reminder`);
-      if (hoursSinceReminder < 18) continue;
-      logger.info(
-        `Time left for user ${user.discordID}: ${hoursLeft.toFixed(
-          1
-        )} hours or ${minutesLeft.toFixed(1)} minutes`
-      );
+      // const hoursSinceReminder = parseInt(
+      //   diffHours(new Date(), user.lastSubtimeReminder).toFixed(1)
+      // );
+      // const daysLeft = parseInt(diffDays(key.expirationDate, new Date()).toFixed(1));
+      // const hoursLeft = diffHours(key.expirationDate, new Date());
+      // const minutesLeft = diffMinutes(key.expirationDate, new Date());
+      // logger.info(`${hoursSinceReminder} hours since last reminder`);
+      // if (hoursSinceReminder < 18) continue;
+      // logger.info(
+      //   `Time left for user ${user.discordID}: ${hoursLeft.toFixed(
+      //     1
+      //   )} hours or ${minutesLeft.toFixed(1)} minutes`
+      // );
 
-      const license = await fetchLicenseInfo(key.key);
+      // const license = await fetchLicenseInfo(key.key);
 
-      if (!license) {
-        logger.error(`API error with ${key}`);
-        continue;
-      }
+      // if (!license) {
+      //   logger.error(`API error with ${key}`);
+      //   continue;
+      // }
 
-      if (license.dateActivated !== null && (license.daysLeft < 0 || license.daysValid < 0)) {
-        if (daysLeft == 0) {
-          logger.info(`User ${user.discordID} has less than a day on their key`);
-          await subtimeReminder(guild, user.discordID, reminderText.oneDay);
-        } else if (daysLeft == 2) {
-          logger.info(`User ${user.discordID} has less than three days on their key`);
-          await subtimeReminder(guild, user.discordID, reminderText.threeDays);
-        }
-      }
+      // if (license.dateActivated !== null && (license.daysLeft < 0 || license.daysValid < 0)) {
+      //   if (daysLeft == 0) {
+      //     logger.info(`User ${user.discordID} has less than a day on their key`);
+      //     await subtimeReminder(guild, user.discordID, reminderText.oneDay);
+      //   } else if (daysLeft == 2) {
+      //     logger.info(`User ${user.discordID} has less than three days on their key`);
+      //     await subtimeReminder(guild, user.discordID, reminderText.threeDays);
+      //   }
+      // }
     }
 
     await prisma.$disconnect();
@@ -825,6 +836,7 @@ async function blackmailRoutine(guild: Guild) {
           await subtimeReminder(guild, user.discordID, reminderText.threeDays);
           break;
         default:
+          // TODO: move to updateCron
           if (minutesLeft < 0) {
             logger.warn(
               `User ${user.discordID} has ${license.daysLeft} days / ${hoursLeft.toFixed(
@@ -855,7 +867,8 @@ async function blackmailRoutine(guild: Guild) {
       if (!user.lastPurchase) {
         user.lastPurchase = new Date(Date.UTC(1900, 0, 1)); // Fallback to a very old date if lastPurchase is null
       }
-      const graceTime = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
+      // const graceTime = 48 * 60 * 60 * 1000; // 48 hours in milliseconds
+      const graceTime = 0; // 0 milliseconds for testing purposes, change to 48 * 60 * 60 * 1000 for production
       const timeSinceLost = Date.now() - user.lostLicenseTime.getTime();
       const timeSincePurchase = Date.now() - user.lastPurchase.getTime();
 
