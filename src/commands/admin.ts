@@ -985,8 +985,13 @@ async function changeUserTier(interaction: CommandInteraction, options: FixedOpt
     }
 
     await giveRole(interaction.guild!, optionRank, optionUser.id);
-
     await prisma.$disconnect();
+
+    return interaction.editReply({
+      content: `The tier of ${userMention(optionUser.id)} has been changed to **Tier ${
+        updatedUser.discountCounter
+      }**.`,
+    });
   } catch (e) {
     logger.error(e);
     await prisma.$disconnect();
